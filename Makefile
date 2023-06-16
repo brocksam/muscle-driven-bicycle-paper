@@ -1,3 +1,4 @@
+html: paper.html
 pdf: paper.pdf
 paper.html: paper.tex references.bib
 	pandoc --mathjax --standalone -o paper.html paper.tex --citeproc --bibliography references.bib
