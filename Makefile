@@ -1,5 +1,5 @@
-html: paper.html
-pdf: paper.pdf
+html: clean paper.html
+pdf: clean paper.pdf
 paper.html: paper.tex references.bib
 	pandoc --mathjax --standalone -o paper.html paper.tex --citeproc --bibliography references.bib
 paper.pdf: paper.tex references.bib
