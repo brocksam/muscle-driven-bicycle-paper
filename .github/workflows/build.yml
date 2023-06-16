@@ -20,10 +20,15 @@ jobs:
           init-shell: bash
           cache-environment: true
           post-cleanup: 'all'
+      - name: Setup TeX Live
+        uses: teatimeguest/setup-texlive-action@v2
+        with:
+          packages: |
+            biblatex
+            cleveref
+            glossaries
       - name: Install LaTeX
-        run: |
-          sudo apt-get install -y texlive latexmk
-          tlmgr install biblatex glossaries
+        run: sudo apt-get install -y latexmk
       - name: Build HTML paper
         run: |
           make pdf
