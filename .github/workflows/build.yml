@@ -31,7 +31,6 @@ jobs:
           mkdir output/
           mv paper.pdf output/
           mv paper.html output/index.html
-          mv figures/ output/figures/
       - name: Deploy the website
         shell: bash -l {0}
         if: ${{ github.event_name == 'push' }}
