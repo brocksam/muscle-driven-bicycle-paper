@@ -12,4 +12,4 @@ clean:
 	(rm -rf *.ps *.log *.dvi *.aux *.*% *.lof *.lop *.lot *.toc *.idx *.ilg *.ind *.bbl *.blg *.cpt *.out)
 	rm figures/*.png
 export-env:
-	mamba env export | grep -v "^prefix: " > environment.yml
+	mamba env export --no-builds | grep -v "^prefix: " > environment.yml
