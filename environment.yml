@@ -1,0 +1,5 @@
+name: muscle-driven-bicycle-paper
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
