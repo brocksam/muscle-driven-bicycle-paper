@@ -1,0 +1,42 @@
+name: build
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    name: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: install mamba
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: environment.yml
+          environment-name: muscle-driven-bicycle-paper
+          extra-specs: |
+            python="3.10"
+      - name: Install LaTeX
+        run: sudo apt-get install -y texlive
+      - name: run tests
+        shell: bash -l {0}
+        run: |
+          micromamba info
+          micromamba list
+          make
+          make paper.html
+          mkdir output/
+          mv paper.pdf output/
+          mv paper.html output/index.html
+          mv figures/ output/figures/
+      - name: Deploy the website
+        shell: bash -l {0}
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email brocksam@users.noreply.github.com
+          git remote add deploy "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/brocksam/muscle-driven-bicycle-paper.git"
+          ghp-import --no-jekyll --no-history -r deploy -m "Update deployment via Github Actions [skip ci]" -p output
