@@ -13,14 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install mamba
-        uses: mamba-org/setup-micromamba
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: environment.yml
           environment-name: muscle-driven-bicycle-paper
+          init-shell: bash
       - name: Install LaTeX
         run: sudo apt-get install -y texlive
       - name: Build paper
-        shell: bash -l {0}
         run: |
           micromamba info
           micromamba list
@@ -30,7 +30,6 @@ jobs:
           mv paper.pdf output/
           mv paper.html output/index.html
       - name: Deploy the website
-        shell: bash -l {0}
         if: ${{ github.event_name == 'push' }}
         run: |
           git config --global user.name "Github Actions"
