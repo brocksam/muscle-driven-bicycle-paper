@@ -13,12 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install mamba
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba
         with:
           environment-file: environment.yml
           environment-name: muscle-driven-bicycle-paper
-          extra-specs: |
-            python="3.10"
       - name: Install LaTeX
         run: sudo apt-get install -y texlive
       - name: Build paper
