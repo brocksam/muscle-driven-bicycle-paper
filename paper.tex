@@ -1,11 +1,12 @@
 \documentclass{article}
-\usepackage{graphicx} % Required for inserting images
 
-\title{Trajectory Optimization of a Muscle-Driven Bicycle}
-\author{Samuel G. Brockie, Jason K. Moore}
-\date{June 2023}
-
+\usepackage{amsmath}
+\usepackage[english]{babel}
+\usepackage{biblatex}
+\usepackage{cleveref}
 \usepackage[acronym]{glossaries}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[utf8]{inputenc}
 \usepackage{siunitx}
 
 \newacronym{nlp}{NLP}{nonlinear programming problem}
@@ -17,6 +18,12 @@
 \newcommand{\pycollo}{\softwarepackage{Pycollo}}
 \newcommand{\sympy}{\softwarepackage{SymPy}}
 
+\title{Trajectory Optimization of a Muscle-Driven Bicycle}
+\author{Samuel G. Brockie, Jason K. Moore}
+\date{June 2023}
+
+\addbibresource{references.bib}
+
 \begin{document}
 
 \maketitle
@@ -27,10 +34,10 @@
     \item 
 \end{itemize}
 
-\section{Introduction}
+\section{Introduction} \label{sec:introduction}
 
 \begin{itemize}
-    \item 
+    \item \Cref{sec:introduction}
 \end{itemize}
 
 \section{Methodology}
@@ -54,7 +61,7 @@
 \subsection{Trajectory Optimization}
 
 \begin{itemize}
-    \item 
+    \item \pycollo{}~\cite{brockie_2021_predictive}
 \end{itemize}
 
 \subsubsection{Optimal Control Problem Formulation}
@@ -98,5 +105,7 @@
 \begin{itemize}
     \item 
 \end{itemize}
+
+\printbibliography
 
 \end{document}
