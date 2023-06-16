@@ -12,7 +12,7 @@ jobs:
     name: build
     steps:
       - uses: actions/checkout@v3
-      - name: install mamba
+      - name: Install mamba
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: environment.yml
@@ -21,7 +21,7 @@ jobs:
             python="3.10"
       - name: Install LaTeX
         run: sudo apt-get install -y texlive
-      - name: run tests
+      - name: Build paper
         shell: bash -l {0}
         run: |
           micromamba info
