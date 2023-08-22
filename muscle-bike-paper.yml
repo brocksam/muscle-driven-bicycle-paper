@@ -1,0 +1,11 @@
+name: muscle-bike-paper
+channels:
+  - conda-forge
+dependencies:
+  - ipython
+  - matplotlib
+  - mpmath
+  - numpy
+  - python
+  - scikits.odes
+  - scipy
