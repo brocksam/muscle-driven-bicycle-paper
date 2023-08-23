@@ -35,10 +35,15 @@ class SteerWith(IntEnum):
 @dataclass
 class ForOpty:
     """Dataclass for passing the equations of motion."""
+    time: sm.Symbol
     state_vars: sm.Matrix
     input_vars: sm.Matrix
     equations_of_motion: sm.Matrix
     parameters: sm.Matrix
+
+    @property
+    def t(self):
+        return self.time
 
     @property
     def x(self):
@@ -716,11 +721,4 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         x = x.col_join(a)
         eom = eom.col_join(ad)
 
-    for_opty = ForOpty(
-        state_vars=x,
-        input_vars=r,
-        equations_of_motion=eom,
-        parameters=p,
-    )
-
-    return for_opty
+    return ForOpty(t, x, r, eom, p)
