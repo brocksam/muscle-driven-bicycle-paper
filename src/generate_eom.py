@@ -711,8 +711,11 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     dyn_x = kane.q.col_join(kane.u)
     dyn_eom = kane.mass_matrix_full*dyn_x - kane.forcing_full
 
-    contact_x = sm.Matrix([u1, u2])
-    contact_eom = sm.Matrix([u1.diff(t) - u1p_def, u2.diff(t) - u2p_def])
+    contact_x = sm.Matrix([q1, q2, u1, u2])
+    contact_eom = sm.Matrix([
+        q1.diff(t) - u1, q2.diff(t) - u2,
+        u1.diff(t) - u1p_def, u2.diff(t) - u2p_def
+    ])
 
     x = dyn_x.col_join(contact_x)
     eom = dyn_eom.col_join(contact_eom)
