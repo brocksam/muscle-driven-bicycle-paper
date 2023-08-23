@@ -237,8 +237,14 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     # T16 : left elbow torque
     T4 = mec.dynamicsymbols('T4') if include_roll_torque else sm.S.Zero
     T6 = mec.dynamicsymbols('T6')
-    T7 = mec.dynamicsymbols('T7') if steer_with is SteerWith.STEER_TORQUE else sm.S.Zero
-    T13, T16 = mec.dynamicsymbols('T13, T16') if steer_with is SteerWith.ELBOW_TORQUE else (sm.S.Zero, sm.S.Zero)
+    if steer_with is SteerWith.STEER_TORQUE:
+        T7 = mec.dynamicsymbols('T7')
+    else:
+        T7 = sm.S.Zero
+    if steer_with is SteerWith.ELBOW_TORQUE:
+        T13, T16 = mec.dynamicsymbols('T13, T16')
+    else:
+        T13, T16 = sm.S.Zero, sm.S.Zero
 
     ##################
     # Position Vectors
