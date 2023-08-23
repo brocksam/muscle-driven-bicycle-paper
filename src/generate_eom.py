@@ -679,12 +679,13 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             ad = ad.col_join(m.rhs())
 
     T = sm.Matrix([T4, T6]) if include_roll_torque else sm.Matrix([T6])
-    if steer_with is SteerWith.STEER_TORQUE:
-        T = sm.Matrix.vstack(T, sm.Matrix([T7]))
+
     if steer_with is SteerWith.MUSCLES:
         r = sm.Matrix.vstack(T, e)
-    else:
+    elif steer_with is SteerWith.ELBOW_TORQUE:
         r = sm.Matrix.vstack(T, sm.Matrix([T13, T16]))
+    elif steer_with is SteerWith.STEER_TORQUE:
+        r = sm.Matrix.vstack(T, sm.Matrix([T7]))
 
     ###############
     # Kane's Method
