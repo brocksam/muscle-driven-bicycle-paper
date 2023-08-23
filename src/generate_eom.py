@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from enum import IntEnum, auto, unique
+
 import sympy as sm
 import sympy.physics.mechanics as mec
 from sympy.physics.mechanics.pathway import LinearPathway
@@ -9,10 +12,75 @@ from sympy.physics._biomechanics import (
 from utils import ReferenceFrame, ExtensorPathway
 
 
-def gen_eom_for_opty(with_muscles=True):
+@unique
+class SteerWith(IntEnum):
+    """Enumeration of options for controlling the bicycle steering.
+
+    Members
+    =======
+    STEER_TORQUE
+        Will include T7 and use this to control the steer.
+    ELBOW_TORQUE
+        Will include T13 and T16 and use these to control the steer.
+    MUSCLES
+        Will add bicep and tricep musculotendons to both arms and use the
+        excitation of these to control the steer
+
+    """
+    STEER_TORQUE = auto()
+    ELBOW_TORQUE = auto()
+    MUSCLES = auto()
+
+
+@dataclass
+class ForOpty:
+    """Dataclass for passing the equations of motion."""
+    state_vars: sm.Matrix
+    input_vars: sm.Matrix
+    equations_of_motion: sm.Matrix
+    parameters: sm.Matrix
+
+    @property
+    def x(self):
+        return self.state_vars
+
+    @property
+    def r(self):
+        return self.input_vars
+
+    @property
+    def eom(self):
+        return self.equations_of_motion
+
+    @property
+    def p(self):
+        return self.parameters
+
+
+def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     """Returns a dictionary with necessary symbolic expressions and variables
-    for use in Opty. ``with_muscles=False`` will include muscles to drive the
-    elbows instead of torques."""
+    for use in Opty.
+
+    Parameters
+    ==========
+
+    steer_with : SteerWith
+        One of the three members of the ``SteerWith`` enumeration. Choosing the
+        ``STEER_TORQUE`` member will include ``T7`` in the model and use this
+        to steer directly. Choosing the ``ELBOW_TORQUE`` will include ``T13``
+        and ``T16`` at the two elbows and use these to steer. Choosing
+        ``MUSCLES`` (default) will add a bicep and tricep musculotendon to each
+        arm, the excitation of which will be used to steer.
+    include_roll_torque : bool
+        Boolean to select whether the roll torque ``T4`` should be included in
+        the formulation. The default is ``False``.
+
+    See Also
+    ========
+
+    SteerWith : Enumeration of steering options.
+
+    """
 
     ##################
     # Reference Frames
@@ -167,7 +235,10 @@ def gen_eom_for_opty(with_muscles=True):
     # T7 : steer torque
     # T13 : right elbow torque
     # T16 : left elbow torque
-    T4, T6, T7, T13, T16 = mec.dynamicsymbols('T4, T6, T7, T13, T16')
+    T4 = mec.dynamicsymbols('T4') if include_roll_torque else sm.S.Zero
+    T6 = mec.dynamicsymbols('T6')
+    T7 = mec.dynamicsymbols('T7') if steer_with is SteerWith.STEER_TORQUE else sm.S.Zero
+    T13, T16 = mec.dynamicsymbols('T13, T16') if steer_with is SteerWith.ELBOW_TORQUE else (sm.S.Zero, sm.S.Zero)
 
     ##################
     # Position Vectors
@@ -417,7 +488,7 @@ def gen_eom_for_opty(with_muscles=True):
     bodies = [rear_frame, rear_wheel, front_frame, front_wheel, rupper_arm,
               rlower_arm, lupper_arm, llower_arm]
 
-    if with_muscles:
+    if steer_with is SteerWith.MUSCLES:
 
         ################
         # Musculotendons
@@ -429,9 +500,15 @@ def gen_eom_for_opty(with_muscles=True):
         l_M_opt_bicep, l_M_opt_tricep = sm.symbols('l_M_opt_bicep, l_M_opt_tricep')
         l_T_slack_bicep, l_T_slack_tricep = sm.symbols('l_T_slack_bicep, l_T_slack_tricep')
         v_M_max, alpha_opt, beta = sm.symbols('v_M_max, alpha_opt, beta')
+        tau_a, tau_d, b_tanh = sm.symbols('tau_a, tau_d, b_tanh')
 
         bicep_right_pathway = LinearPathway(gm, hm)
-        bicep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants('bi_r')
+        bicep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+            'bi_r',
+            activation_time_constant=tau_a,
+            deactivation_time_constant=tau_d,
+            smoothing_rate=b_tanh,
+        )
         bicep_right = MusculotendonDeGroote2016(
             'bi_r',
             bicep_right_pathway,
@@ -445,7 +522,12 @@ def gen_eom_for_opty(with_muscles=True):
         )
 
         bicep_left_pathway = LinearPathway(im, jm)
-        bicep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants('bi_l')
+        bicep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+            'bi_l',
+            activation_time_constant=tau_a,
+            deactivation_time_constant=tau_d,
+            smoothing_rate=b_tanh,
+        )
         bicep_left = MusculotendonDeGroote2016(
             'bi_l',
             bicep_left_pathway,
@@ -460,7 +542,12 @@ def gen_eom_for_opty(with_muscles=True):
 
         tricep_right_pathway = ExtensorPathway(gm, hm, gh, G['2'], -G['3'],
                                                H['3'], d8/10, q13)
-        tricep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants('tri_r')
+        tricep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+            'tri_r',
+            activation_time_constant=tau_a,
+            deactivation_time_constant=tau_d,
+            smoothing_rate=b_tanh,
+        )
         tricep_right = MusculotendonDeGroote2016(
             'tri_r',
             tricep_right_pathway,
@@ -475,7 +562,12 @@ def gen_eom_for_opty(with_muscles=True):
 
         tricep_left_pathway = ExtensorPathway(im, jm, ji, I['2'], -I['3'],
                                               J['3'], d8/10, q16)
-        tricep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants('tri_l')
+        tricep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+            'tri_l',
+            activation_time_constant=tau_a,
+            deactivation_time_constant=tau_d,
+            smoothing_rate=b_tanh,
+        )
         tricep_left = MusculotendonDeGroote2016(
             'tri_l',
             tricep_left_pathway,
@@ -499,6 +591,9 @@ def gen_eom_for_opty(with_muscles=True):
             v_M_max: 10.0,
             alpha_opt: 0.0,
             beta: 0.1,
+            tau_a: 0.015,
+            tau_d: 0.060,
+            b_tanh: 10.0
         }
         mt = sm.Matrix(list(musculotendon_constants.keys()))
 
@@ -528,7 +623,7 @@ def gen_eom_for_opty(with_muscles=True):
     Tj = (J, T16*I['2'])
 
     forces = [Fco, Fdo, Feo, Ffo, Fgo, Fho, Fio, Fjo, Tc, Td, Te]
-    if with_muscles:
+    if steer_with is SteerWith.MUSCLES:
         # musculotendon forces
         Fm = sum([musculotendon.to_loads() for musculotendon in
                   musculotendons], start=[])
@@ -562,7 +657,7 @@ def gen_eom_for_opty(with_muscles=True):
                    ic31, ic33, id11, id22, ie11, ie22, ie31, ie33, if11, if22,
                    l1, l2, l3, l4, mc, md, me, mf, mg, mh, mi, mj, rf, rr])
 
-    if with_muscles:
+    if steer_with is SteerWith.MUSCLES:
         mt = sm.Matrix(list(musculotendon_constants.keys()))
         p = p.col_join(mt)
 
@@ -574,8 +669,10 @@ def gen_eom_for_opty(with_muscles=True):
             a = a.col_join(m.x)
             ad = ad.col_join(m.rhs())
 
-    T = sm.Matrix([T4, T6, T7])
-    if with_muscles:
+    T = sm.Matrix([T4, T6]) if include_roll_torque else sm.Matrix([T6])
+    if steer_with is SteerWith.STEER_TORQUE:
+        T = sm.Matrix.vstack(T, sm.Matrix([T7]))
+    if steer_with is SteerWith.MUSCLES:
         r = sm.Matrix.vstack(T, e)
     else:
         r = sm.Matrix.vstack(T, sm.Matrix([T13, T16]))
@@ -609,15 +706,15 @@ def gen_eom_for_opty(with_muscles=True):
     x = dyn_x.col_join(contact_x)
     eom = dyn_eom.col_join(contact_eom)
 
-    if with_muscles:
+    if steer_with is SteerWith.MUSCLES:
         x = x.col_join(a)
         eom = eom.col_join(ad)
 
-    for_opty = {
-        'state_symbols': x,
-        'equations_of_motion': eom,
-        'parameters': p,
-        'inputs': r
-    }
+    for_opty = ForOpty(
+        state_vars=x,
+        input_vars=r,
+        equations_of_motion=eom,
+        parameters=p,
+    )
 
     return for_opty
