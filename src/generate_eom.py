@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto, unique
 
+import numpy as np
 import sympy as sm
 import sympy.physics.mechanics as mec
-from sympy.physics.mechanics.pathway import LinearPathway
 from sympy.physics._biomechanics import (
     FirstOrderActivationDeGroote2016,
     MusculotendonDeGroote2016,
@@ -513,7 +513,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         v_M_max, alpha_opt, beta = sm.symbols('v_M_max, alpha_opt, beta')
         tau_a, tau_d, b_tanh = sm.symbols('tau_a, tau_d, b_tanh')
 
-        bicep_right_pathway = LinearPathway(gm, hm)
+        bicep_right_pathway = mec.LinearPathway(gm, hm)
         bicep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
             'bi_r',
             activation_time_constant=tau_a,
@@ -532,7 +532,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             fiber_damping_coefficient=beta,
         )
 
-        bicep_left_pathway = LinearPathway(im, jm)
+        bicep_left_pathway = mec.LinearPathway(im, jm)
         bicep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
             'bi_l',
             activation_time_constant=tau_a,
@@ -592,21 +592,6 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         )
 
         musculotendons = [bicep_right, bicep_left, tricep_right, tricep_left]
-        musculotendon_constants = {
-            F_M_max_bicep: 500.0,
-            l_M_opt_bicep: 0.18,
-            l_T_slack_bicep: 0.17,
-            F_M_max_tricep: 500.0,
-            l_M_opt_tricep: 0.18,
-            l_T_slack_tricep: 0.19,
-            v_M_max: 10.0,
-            alpha_opt: 0.0,
-            beta: 0.1,
-            tau_a: 0.015,
-            tau_d: 0.060,
-            b_tanh: 10.0
-        }
-        mt = sm.Matrix(list(musculotendon_constants.keys()))
 
     ###########################
     # Generalized Active Forces
@@ -669,8 +654,18 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
                    l1, l2, l3, l4, mc, md, me, mf, mg, mh, mi, mj, rf, rr])
 
     if steer_with is SteerWith.MUSCLES:
-        mt = sm.Matrix(list(musculotendon_constants.keys()))
-        p = p.col_join(mt)
+        p_muscles = sm.Matrix([
+            F_M_max_bicep,
+            l_M_opt_bicep,
+            l_T_slack_bicep,
+            F_M_max_tricep,
+            l_M_opt_tricep,
+            l_T_slack_tricep,
+            v_M_max,
+            alpha_opt,
+            beta,
+        ])
+        p = p.col_join(p_muscles)
 
         e = musculotendons[0].r
         a = musculotendons[0].x
@@ -725,3 +720,64 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         eom = eom.col_join(ad)
 
     return ForOpty(t, x, r, eom, p)
+
+
+def constants_values(with_muscles=True):
+
+    bike_p_vals = np.array([
+        0.9534570696121849,  # d1
+        0.2676445084476887,  # d2
+        0.03207142672761929,  # d3
+        0.8,  # d4
+        0.2,  # d5, shoulder half width
+        -1.0,  # d6
+        0.3,  # d7, upper arm length
+        0.35,  # d8, lower arm length
+        0.06,  # d9
+        0.25,  # d10, handlebar half width
+        -0.5,  # d11
+        9.81,  # g
+        7.178169776497895,  # ic11
+        11.0,  # ic22
+        3.8225535938357873,  # ic31
+        4.821830223502103,  # ic33
+        0.0603,  # id11
+        0.12,  # id22
+        0.05841337700152972,  # ie11
+        0.06,  # ie22
+        0.009119225261946298,  # ie31
+        0.007586622998470264,  # ie33
+        0.1405,  # if11
+        0.28,  # if22
+        0.4707271515135145,  # l1
+        -0.47792881146460797,  # l2
+        -0.00597083392418685,  # l3
+        -0.3699518200282974,  # l4
+        85.0,  # mc
+        2.0,  # md
+        4.0,  # me
+        3.0,  # mf
+        2.3,  # mg
+        1.7,  # mh
+        2.3,  # mi
+        1.7,  # mj
+        0.35,  # rf
+        0.3,  # rr
+    ])
+
+    muscle_p_vals = np.array([
+        500.0,  # F_M_max_bicep
+        0.18,  # l_M_opt_bicep
+        0.17,  # l_T_slack_bicep
+        500.0,  # F_M_max_tricep
+        0.18,  # l_M_opt_tricep
+        0.19,  # l_T_slack_tricep
+        10.0,  # v_M_max
+        0.0,  # alpha_opt
+        0.1,  # beta
+    ])
+
+    if with_muscles:
+        return np.hstack((bike_p_vals, muscle_p_vals))
+    else:
+        return bike_p_vals
