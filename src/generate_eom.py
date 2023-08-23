@@ -664,6 +664,9 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             v_M_max,
             alpha_opt,
             beta,
+            tau_a,
+            tau_d,
+            b_tanh,
         ])
         p = p.col_join(p_muscles)
 
@@ -775,6 +778,9 @@ def constants_values(with_muscles=True):
         10.0,  # v_M_max
         0.0,  # alpha_opt
         0.1,  # beta
+        0.015,  # tau_a
+        0.060,  # tau_d
+        10.0,  # b_tanh
     ])
 
     if with_muscles:
