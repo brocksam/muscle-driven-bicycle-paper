@@ -725,7 +725,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     return ForOpty(t, x, r, eom, p)
 
 
-def constants_values(with_muscles=True):
+def constants_values(steer_with=SteerWith.MUSCLES):
 
     bike_p_vals = np.array([
         0.9534570696121849,  # d1
@@ -783,7 +783,7 @@ def constants_values(with_muscles=True):
         10.0,  # b_tanh
     ])
 
-    if with_muscles:
+    if steer_with is SteerWith.MUSCLES:
         return np.hstack((bike_p_vals, muscle_p_vals))
     else:
         return bike_p_vals
