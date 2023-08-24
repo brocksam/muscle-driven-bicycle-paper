@@ -747,7 +747,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
     Fr, Frs = kane.kanes_equations(bodies, loads=forces)
 
-    x = kane.q.col_join(kane.u)
+    x = q.col_join(u)
     x_all = kane.q.col_join(kane.u)
     eom = kane.mass_matrix_full*x_all - kane.forcing_full
 
