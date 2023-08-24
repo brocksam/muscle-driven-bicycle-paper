@@ -531,7 +531,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         tau_a, tau_d, b_tanh = sm.symbols('tau_a, tau_d, b_tanh')
 
         bicep_right_pathway = mec.LinearPathway(gm, hm)
-        bicep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        bicep_right_activation = FirstOrderActivationDeGroote2016(
             'bi_r',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -550,7 +550,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         )
 
         bicep_left_pathway = mec.LinearPathway(im, jm)
-        bicep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        bicep_left_activation = FirstOrderActivationDeGroote2016(
             'bi_l',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -570,7 +570,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
         tricep_right_pathway = ExtensorPathway(gm, hm, gh, G['2'], -G['3'],
                                                H['3'], d8/10, q13)
-        tricep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        tricep_right_activation = FirstOrderActivationDeGroote2016(
             'tri_r',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -590,7 +590,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
         tricep_left_pathway = ExtensorPathway(im, jm, ji, I['2'], -I['3'],
                                               J['3'], d8/10, q16)
-        tricep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        tricep_left_activation = FirstOrderActivationDeGroote2016(
             'tri_l',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
