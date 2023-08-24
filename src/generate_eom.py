@@ -635,10 +635,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     Ti = (I, -T16*I['2'])
     Tj = (J, T16*I['2'])
 
-    forces = [Fco, Fdo, Feo, Ffo, Fgo, Fho, Fio, Fjo]
-    if include_roll_torque:
-        forces.append(Tc)
-    forces.append(Td)
+    forces = [Fco, Fdo, Feo, Ffo, Fgo, Fho, Fio, Fjo, Tc, Td]
     if steer_with is SteerWith.STEER_TORQUE:
         forces.append(Te)
     elif steer_with is SteerWith.ELBOW_TORQUE:
