@@ -18,6 +18,7 @@ NUM_NODES = 100
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 
 STEER_WITH = SteerWith.STEER_TORQUE
+INCLUDE_ROLL_TORQUE = False
 
 
 def target_q2(q1):
@@ -43,13 +44,29 @@ def obj_grad(free):
     return grad
 
 
-model = gen_eom_for_opty(STEER_WITH)
+model = gen_eom_for_opty(STEER_WITH, INCLUDE_ROLL_TORQUE)
 constants = constants_values(STEER_WITH)
 
 q1, q2, q3, q4, q5, q6, q7, q8, q11, q12, q13, q14, q15, q16 = model.x[:14]
-u1, u2, u3, u4, u5, u6, u7, u8, u11, u12, u13, u14, u15, u16 = model.x[14:]
-if STEER_WITH is SteerWith.STEER_TORQUE:
-    T6, T7 = model.r
+u1, u2, u3, u4, u5, u6, u7, u8, u11, u12, u13, u14, u15, u16 = model.x[14:28]
+if STEER_WITH is SteerWith.MUSCLES:
+    a1, a2, a3, a4 = model.x[28:]
+    if INCLUDE_ROLL_TORQUE:
+        T4, T6 = model.r[:2]
+        e1, e2, e3, e4 = model.r[2:]
+    else:
+        T6 = model.r[0]
+        e1, e2, e3, e4 = model.r[1:]
+elif STEER_WITH is SteerWith.ELBOW_TORQUE:
+    if INCLUDE_ROLL_TORQUE:
+        T4, T6, T13, T16 = model.r
+    else:
+        T6, T13, T16 = model.r
+elif STEER_WITH is SteerWith.STEER_TORQUE:
+    if INCLUDE_ROLL_TORQUE:
+        T4, T6, T7 = model.r
+    else:
+        T6, T7 = model.r
 else:
     raise NotImplementedError
 
