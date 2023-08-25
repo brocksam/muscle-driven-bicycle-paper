@@ -7,7 +7,7 @@ def gen_init_guess_for_opty(model, problem, metadata):
 
     guesses = []
     for var in sm.Matrix.vstack(model.x, model.r):
-        guesses.append(DISPATCHER[var](model, problem, metadata))
+        guesses.append(DISPATCHER[var](model, problem, metadata) + 0.01*np.random.random())
 
     init_guess = np.concatenate(guesses)
 
@@ -26,149 +26,149 @@ def _q2_guess(model, problem, metadata):
     return metadata.target_q2(np.linspace(0.0, metadata.longitudinal_displacement, metadata.num_nodes))
 
 
-def _q3_guess(mode, problem, metadata):
+def _q3_guess(model, problem, metadata):
     """q3: frame yaw angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.arctan(_q2_guess(model, problem, metadata) / (_q1_guess(model, problem, metadata) + 0.01*np.random.random()))
 
 
-def _q4_guess(mode, problem, metadata):
+def _q4_guess(model, problem, metadata):
     """q4: frame roll angle."""
     return 0.01*np.ones(metadata.num_nodes)
 
 
-def _q5_guess(mode, problem, metadata):
+def _q5_guess(model, problem, metadata):
     """q5: frame pitch angle."""
     return 0.01*np.ones(metadata.num_nodes)
 
 
-def _q6_guess(mode, problem, metadata):
+def _q6_guess(model, problem, metadata):
     """q6: rear wheel rotation angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return -_q1_guess(model, problem, metadata) / (5.0 / metadata.constants[-1])
 
 
-def _q7_guess(mode, problem, metadata):
+def _q7_guess(model, problem, metadata):
     """q7: steering rotation angle."""
     return 0.01*np.ones(metadata.num_nodes)
 
 
-def _q8_guess(mode, problem, metadata):
+def _q8_guess(model, problem, metadata):
     """q8: front wheel rotation angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return -_q1_guess(model, problem, metadata) / (5.0 / metadata.constants[-2])
 
 
-def _q11_guess(mode, problem, metadata):
+def _q11_guess(model, problem, metadata):
     """q11: first (swing) right shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return -0.21607176*np.ones(metadata.num_nodes)
 
 
-def _q12_guess(mode, problem, metadata):
+def _q12_guess(model, problem, metadata):
     """q12: second (rotation) right shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return 0.15706218*np.ones(metadata.num_nodes)
 
 
-def _q13_guess(mode, problem, metadata):
+def _q13_guess(model, problem, metadata):
     """q13: right elbow angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return 1.15113191*np.ones(metadata.num_nodes)
 
 
-def _q14_guess(mode, problem, metadata):
+def _q14_guess(model, problem, metadata):
     """q14: first (swing) left shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return -0.21607176*np.ones(metadata.num_nodes)
 
 
-def _q15_guess(mode, problem, metadata):
+def _q15_guess(model, problem, metadata):
     """q15: second (rotation) left shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return -0.15706218*np.ones(metadata.num_nodes)
 
 
-def _q16_guess(mode, problem, metadata):
+def _q16_guess(model, problem, metadata):
     """q16: left elbow angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return 1.15113191*np.ones(metadata.num_nodes)
 
 
 def _u1_guess(model, problem, metadata):
     """u1: perpendicular distance from the n2> axis to the rear contact point
     in the ground plane."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q1_guess(model, problem, metadata))
 
 
 def _u2_guess(model, problem, metadata):
     """u2: perpendicular distance from the n1> axis to the rear contact point
     in the ground plane."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q2_guess(model, problem, metadata))
 
 
-def _u3_guess(mode, problem, metadata):
+def _u3_guess(model, problem, metadata):
     """u3: frame yaw angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q3_guess(model, problem, metadata))
 
 
-def _u4_guess(mode, problem, metadata):
+def _u4_guess(model, problem, metadata):
     """u4: frame roll angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q4_guess(model, problem, metadata))
 
 
-def _u5_guess(mode, problem, metadata):
+def _u5_guess(model, problem, metadata):
     """u5: frame pitch angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q5_guess(model, problem, metadata))
 
 
-def _u6_guess(mode, problem, metadata):
+def _u6_guess(model, problem, metadata):
     """u6: rear wheel rotation angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q6_guess(model, problem, metadata))
 
 
-def _u7_guess(mode, problem, metadata):
+def _u7_guess(model, problem, metadata):
     """u7: steering rotation angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q7_guess(model, problem, metadata))
 
 
-def _u8_guess(mode, problem, metadata):
+def _u8_guess(model, problem, metadata):
     """u8: front wheel rotation angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q8_guess(model, problem, metadata))
 
 
-def _u11_guess(mode, problem, metadata):
+def _u11_guess(model, problem, metadata):
     """u11: first (swing) right shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q11_guess(model, problem, metadata))
 
 
-def _u12_guess(mode, problem, metadata):
+def _u12_guess(model, problem, metadata):
     """u12: second (rotation) right shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q12_guess(model, problem, metadata))
 
 
-def _u13_guess(mode, problem, metadata):
+def _u13_guess(model, problem, metadata):
     """u13: right elbow angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q13_guess(model, problem, metadata))
 
 
-def _u14_guess(mode, problem, metadata):
+def _u14_guess(model, problem, metadata):
     """u14: first (swing) left shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q14_guess(model, problem, metadata))
 
 
-def _u15_guess(mode, problem, metadata):
+def _u15_guess(model, problem, metadata):
     """u15: second (rotation) left shoulder angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q15_guess(model, problem, metadata))
 
 
-def _u16_guess(mode, problem, metadata):
+def _u16_guess(model, problem, metadata):
     """u16: left elbow angle."""
-    return 0.01*np.ones(metadata.num_nodes)
+    return np.gradient(_q16_guess(model, problem, metadata))
 
 
-def _T4_guess(mode, problem, metadata):
+def _T4_guess(model, problem, metadata):
     """."""
     return 0.01*np.ones(metadata.num_nodes)
 
 
-def _T6_guess(mode, problem, metadata):
+def _T6_guess(model, problem, metadata):
     """."""
     return 0.01*np.ones(metadata.num_nodes)
 
 
-def _T7_guess(mode, problem, metadata):
+def _T7_guess(model, problem, metadata):
     """."""
     return 0.01*np.ones(metadata.num_nodes)
 
