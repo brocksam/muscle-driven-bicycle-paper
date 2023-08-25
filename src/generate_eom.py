@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from enum import IntEnum, auto, unique
-
 import numpy as np
 import sympy as sm
 import sympy.physics.mechanics as mec
@@ -9,57 +6,8 @@ from sympy.physics._biomechanics import (
     MusculotendonDeGroote2016,
 )
 
+from container import ForOpty, SteerWith
 from utils import ReferenceFrame, ExtensorPathway
-
-
-@unique
-class SteerWith(IntEnum):
-    """Enumeration of options for controlling the bicycle steering.
-
-    Members
-    =======
-    STEER_TORQUE
-        Will include T7 and use this to control the steer.
-    ELBOW_TORQUE
-        Will include T13 and T16 and use these to control the steer.
-    MUSCLES
-        Will add bicep and tricep musculotendons to both arms and use the
-        excitation of these to control the steer
-
-    """
-    STEER_TORQUE = auto()
-    ELBOW_TORQUE = auto()
-    MUSCLES = auto()
-
-
-@dataclass
-class ForOpty:
-    """Dataclass for passing the equations of motion."""
-    time: sm.Symbol
-    state_vars: sm.Matrix
-    input_vars: sm.Matrix
-    equations_of_motion: sm.Matrix
-    parameters: sm.Matrix
-
-    @property
-    def t(self):
-        return self.time
-
-    @property
-    def x(self):
-        return self.state_vars
-
-    @property
-    def r(self):
-        return self.input_vars
-
-    @property
-    def eom(self):
-        return self.equations_of_motion
-
-    @property
-    def p(self):
-        return self.parameters
 
 
 def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):

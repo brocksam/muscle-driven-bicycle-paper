@@ -8,7 +8,9 @@ import sympy as sm
 import sympy.physics.mechanics as me
 from opty.direct_collocation import Problem
 
+from container import Metadata, SteerWith
 from generate_eom import SteerWith, constants_values, gen_eom_for_opty
+from generate_init_guess import gen_init_guess_for_opty
 
 
 DURATION = 2.0
@@ -181,9 +183,13 @@ problem = Problem(
 stop = timer()
 print(f'`opty.Problem` instantiated in {stop-start}s.')
 
+metadata = Metadata(DURATION, LONGITUDINAL_DISPLACEMENT, LATERAL_DISPLACEMENT,
+                    NUM_NODES, INTERVAL_VALUE, STEER_WITH, INCLUDE_ROLL_TORQUE,
+                    target_q2)
+
 # Generate a sensible initial guess
 # np.array of length problem.num_free
-initial_guess = np.zeros(problem.num_free)
+initial_guess = gen_init_guess_for_opty(model, problem, metadata)
 
 # Find the optimal solution.
 sol, info = problem.solve(initial_guess)
