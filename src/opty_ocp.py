@@ -131,11 +131,32 @@ bounds = {
     u15: (-100.0, 100.0),
     u16: (-100.0, 100.0),
 }
+if INCLUDE_ROLL_TORQUE:
+    bounds = {
+        **bounds,
+        T4: (-100.0, 100.0),
+    }
 if STEER_WITH is SteerWith.STEER_TORQUE:
     bounds = {
         **bounds,
         T6: (-100.0, 100.0),
-        T7: (100.0, 100.0),
+        T7: (-100.0, 100.0),
+    }
+elif STEER_WITH is SteerWith.ELBOW_TORQUE:
+    bounds = {
+        **bounds,
+        T6: (-100.0, 100.0),
+        T13: (-100.0, 100.0),
+        T16: (-100.0, 100.0),
+    }
+elif STEER_WITH is SteerWith.MUSCLES:
+    bounds = {
+        **bounds,
+        T6: (-100.0, 100.0),
+        e1: (-100.0, 100.0),
+        e2: (-100.0, 100.0),
+        e3: (-100.0, 100.0),
+        e4: (-100.0, 100.0),
     }
 else:
     raise NotImplementedError
