@@ -176,7 +176,6 @@ problem = Problem(
     instance_constraints=instance_constraints,
     bounds=bounds,
     integration_method='midpoint',
-    tmp_dir='/Users/sambrockie/Documents/Delft/Code/muscle-driven-bicycle-paper/codegen'
 )
 
 stop = timer()
