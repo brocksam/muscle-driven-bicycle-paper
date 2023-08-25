@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import IntEnum, auto, unique
 
+import numpy as np
 import sympy as sm
 
 
@@ -34,6 +35,7 @@ class Metadata:
     steer_with: SteerWith
     include_roll_torque: bool
     target_q2: callable
+    constants: np.array
 
 
 @dataclass
