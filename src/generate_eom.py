@@ -605,6 +605,12 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     # Prep symbolic data for output
     ###############################
 
+    # N = 14
+    # M = 7
+    # n = N - M = 14 - 7
+    # m = 4
+    # p = n - m = 7 - 4 = 3
+
     q_ind = (q1, q2, q3, q4, q6, q7, q8)  # yaw, roll, steer
     q_dep = (q5, q11, q12, q13, q14, q15, q16)  # pitch
     q_ign = None
@@ -693,8 +699,9 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     Fr, Frs = kane.kanes_equations(bodies, loads=forces)
 
     x = q.col_join(u)
-    x_all = kane.q.col_join(kane.u)
-    eom = kane.mass_matrix_full*x_all - kane.forcing_full
+    essential_eom = Fr + Frs
+    essential_constraints = holonomic.col_join(nonholonomic[[0, 1, 2, 4], 0])
+    eom = sm.Matrix(kinematical).col_join(essential_eom).col_join(essential_constraints)
 
     if steer_with is SteerWith.MUSCLES:
         x = x.col_join(a)
