@@ -192,7 +192,7 @@ print(f'`opty.Problem` instantiated in {stop-start}s.')
 
 metadata = Metadata(DURATION, LONGITUDINAL_DISPLACEMENT, LATERAL_DISPLACEMENT,
                     NUM_NODES, INTERVAL_VALUE, STEER_WITH, INCLUDE_ROLL_TORQUE,
-                    target_q2)
+                    target_q2, constants)
 
 # Generate a sensible initial guess
 # np.array of length problem.num_free
