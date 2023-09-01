@@ -173,6 +173,16 @@ def _T7_guess(model, problem, metadata):
     return 0.01*np.ones(metadata.num_nodes)
 
 
+def _T13_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _T16_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
 DISPATCHER = {
     mec.dynamicsymbols('q1'): _q1_guess,
     mec.dynamicsymbols('q2'): _q2_guess,
@@ -205,4 +215,6 @@ DISPATCHER = {
     mec.dynamicsymbols('T4'): _T4_guess,
     mec.dynamicsymbols('T6'): _T6_guess,
     mec.dynamicsymbols('T7'): _T7_guess,
+    mec.dynamicsymbols('T13'): _T13_guess,
+    mec.dynamicsymbols('T16'): _T16_guess,
 }
