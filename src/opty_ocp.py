@@ -185,6 +185,8 @@ problem = Problem(
     integration_method='midpoint',
 )
 
+problem.add_option('nlp_scaling_method', 'gradient-based')
+
 stop = timer()
 print(f'`opty.Problem` instantiated in {stop-start}s.')
 
