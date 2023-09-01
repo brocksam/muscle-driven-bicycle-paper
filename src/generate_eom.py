@@ -701,7 +701,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     x = q.col_join(u)
     essential_eom = Fr + Frs
     essential_constraints = holonomic.col_join(nonholonomic[[0, 1, 2, 4], 0])
-    eom = essential_eom.col_join(essential_constraints)
+    eom = sm.Matrix(kinematical).col_join(essential_eom).col_join(essential_constraints)
 
     if steer_with is SteerWith.MUSCLES:
         x = x.col_join(a)
