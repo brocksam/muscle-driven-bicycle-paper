@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from enum import IntEnum, auto, unique
-
 import numpy as np
 import sympy as sm
 import sympy.physics.mechanics as mec
@@ -9,57 +6,8 @@ from sympy.physics._biomechanics import (
     MusculotendonDeGroote2016,
 )
 
+from container import ForOpty, SteerWith
 from utils import ReferenceFrame, ExtensorPathway
-
-
-@unique
-class SteerWith(IntEnum):
-    """Enumeration of options for controlling the bicycle steering.
-
-    Members
-    =======
-    STEER_TORQUE
-        Will include T7 and use this to control the steer.
-    ELBOW_TORQUE
-        Will include T13 and T16 and use these to control the steer.
-    MUSCLES
-        Will add bicep and tricep musculotendons to both arms and use the
-        excitation of these to control the steer
-
-    """
-    STEER_TORQUE = auto()
-    ELBOW_TORQUE = auto()
-    MUSCLES = auto()
-
-
-@dataclass
-class ForOpty:
-    """Dataclass for passing the equations of motion."""
-    time: sm.Symbol
-    state_vars: sm.Matrix
-    input_vars: sm.Matrix
-    equations_of_motion: sm.Matrix
-    parameters: sm.Matrix
-
-    @property
-    def t(self):
-        return self.time
-
-    @property
-    def x(self):
-        return self.state_vars
-
-    @property
-    def r(self):
-        return self.input_vars
-
-    @property
-    def eom(self):
-        return self.equations_of_motion
-
-    @property
-    def p(self):
-        return self.parameters
 
 
 def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
@@ -176,8 +124,12 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     B.orient(A, 'Axis', (q4, A['1']))
     # rear frame pitch
     C.orient(B, 'Axis', (q5, B['2']))
+    # rear wheel angle
+    D.orient(C, 'Axis', (q6, C['2']))
     # front frame steer
     E.orient(C, 'Axis', (q7, C['3']))
+    # front wheel angle
+    F.orient(E, 'Axis', (q8, E['2']))
     # right upper arm
     G.orient_body_fixed(C, (q11, q12, 0), '232')
     # right lower arm
@@ -257,10 +209,14 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
     print('Defining position vectors.')
 
+    # ground origin
+    O = mec.Point('O')
+
     # rear wheel contact point
     dn = mec.Point('dn')
+    dn.set_pos(O, q1*N['1'] + q2*N['2'])
 
-    # newtonian origin to rear wheel center
+    # rear wheel contact point to rear wheel center
     do = mec.Point('do')
     do.set_pos(dn, -rr*B['3'])
 
@@ -318,7 +274,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     im = mec.Point('im')
     im.set_pos(cgl, 1*d7/10*I['3'])
 
-    # left elbow to lower arm muscle atachment
+    # left elbow to lower arm muscle attachment
     jm = mec.Point('jm')
     jm.set_pos(ji, 2*d8/10*J['3'])
 
@@ -372,10 +328,14 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     print('Defining kinematical differential equations.')
 
     kinematical = [
+        q1.diff(t) - u1,  # rear wheel contact x location
+        q2.diff(t) - u2,  # rear wheel contact y location
         q3.diff(t) - u3,  # yaw
         q4.diff(t) - u4,  # roll
         q5.diff(t) - u5,  # pitch
+        q6.diff(t) - u6,  # rear wheel rotation
         q7.diff(t) - u7,  # steer
+        q8.diff(t) - u8,  # front wheel rotation
         q11.diff(t) - u11,  # right shoulder extension
         q12.diff(t) - u12,  # right shoulder rotation
         q13.diff(t) - u13,  # right elbow extension
@@ -410,11 +370,13 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
     print('Defining linear velocities.')
 
+    O.set_vel(N, 0)
+
     # rear wheel contact stays in ground plane and does not slip
-    dn.set_vel(N, 0.0*N['1'])
+    dn.set_vel(N, u1*N['1'] + u2*N['2'])
 
     # mass centers
-    do.v2pt_theory(dn, N, D)
+    do.set_vel(N, do.pos_from(O).dt(N).xreplace({q1.diff(): u1, q2.diff(): u2}))
     co.v2pt_theory(do, N, C)
     ce.v2pt_theory(do, N, C)
     fo.v2pt_theory(ce, N, E)
@@ -435,8 +397,9 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     jc.v2pt_theory(ji, N, J)
     ch_l.v2pt_theory(fo, N, F)
 
-    # front wheel contact velocity
-    fn.v2pt_theory(fo, N, F)
+    # rear and front wheel contact velocity
+    N_v_dn = do.vel(N) + D.ang_vel_in(N).cross(dn.pos_from(do))
+    N_v_fn = fo.vel(N) + F.ang_vel_in(N).cross(fn.pos_from(fo))
 
     ####################
     # Motion Constraints
@@ -445,9 +408,11 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     print('Defining nonholonomic constraints.')
 
     nonholonomic = sm.Matrix([
-        fn.vel(N).dot(A['1']),
-        fn.vel(N).dot(A['3']),
-        fn.vel(N).dot(A['2']),
+        N_v_dn.dot(A['1']),
+        N_v_dn.dot(A['2']),
+        N_v_fn.dot(A['1']),
+        N_v_fn.dot(A['3']),
+        N_v_fn.dot(A['2']),
         holonomic_handr[0].diff(t),
         holonomic_handr[1].diff(t),
         holonomic_handr[2].diff(t),
@@ -457,8 +422,6 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     ])
 
 
-    print('The nonholonomic constraints are a function of these dynamic variables:')
-    print(list(sm.ordered(mec.find_dynamicsymbols(sm.Matrix(nonholonomic)))))
 
     #########
     # Inertia
@@ -471,6 +434,8 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     # because there is no direction cosine matrix relating the wheel frames
     # back to the other reference frames so I define them here with respect to
     # the rear and front frames.
+
+    # NOTE : Changing 0.0 to 0 or sm.S(0) changes the floating point errors.
 
     Ic = mec.inertia(C, ic11, ic22, ic33, 0.0, 0.0, ic31)
     Id = mec.inertia(C, id11, id22, id11, 0.0, 0.0, 0.0)
@@ -514,7 +479,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         tau_a, tau_d, b_tanh = sm.symbols('tau_a, tau_d, b_tanh')
 
         bicep_right_pathway = mec.LinearPathway(gm, hm)
-        bicep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        bicep_right_activation = FirstOrderActivationDeGroote2016(
             'bi_r',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -533,7 +498,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         )
 
         bicep_left_pathway = mec.LinearPathway(im, jm)
-        bicep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        bicep_left_activation = FirstOrderActivationDeGroote2016(
             'bi_l',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -553,7 +518,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
         tricep_right_pathway = ExtensorPathway(gm, hm, gh, G['2'], -G['3'],
                                                H['3'], d8/10, q13)
-        tricep_right_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        tricep_right_activation = FirstOrderActivationDeGroote2016(
             'tri_r',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -573,7 +538,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
         tricep_left_pathway = ExtensorPathway(im, jm, ji, I['2'], -I['3'],
                                               J['3'], d8/10, q16)
-        tricep_left_activation = FirstOrderActivationDeGroote2016.with_default_constants(
+        tricep_left_activation = FirstOrderActivationDeGroote2016(
             'tri_l',
             activation_time_constant=tau_a,
             deactivation_time_constant=tau_d,
@@ -618,37 +583,39 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     Ti = (I, -T16*I['2'])
     Tj = (J, T16*I['2'])
 
-    forces = [Fco, Fdo, Feo, Ffo, Fgo, Fho, Fio, Fjo, Tc, Td, Te]
-    if steer_with is SteerWith.MUSCLES:
-        # musculotendon forces
-        Fm = sum([musculotendon.to_loads() for musculotendon in
-                  musculotendons], start=[])
-        forces += Fm
-    else:
-        forces += [Tg, Th, Ti, Tj]
+    forces = [Fco, Fdo, Feo, Ffo, Fgo, Fho, Fio, Fjo, Tc, Td]
+    if steer_with is SteerWith.STEER_TORQUE:
+        forces.append(Te)
+    elif steer_with is SteerWith.ELBOW_TORQUE:
+        forces.extend([Tg, Th, Ti, Tj])
+    elif steer_with is SteerWith.MUSCLES:
+        for musculotendon in musculotendons:
+            forces.extend(musculotendon.to_loads())
 
     # Manually compute the ground contact velocities.
-    kindiffdict = sm.solve(kinematical, [q3.diff(t), q4.diff(t), q5.diff(t),
-                                         q7.diff(t), q11.diff(t), q12.diff(t),
-                                         q13.diff(t), q14.diff(t), q15.diff(t),
-                                         q16.diff(t)], dict=True)[0]
+    kindiffeqs = [q1.diff(t), q2.diff(t), q3.diff(t), q4.diff(t), q5.diff(t),
+                  q6.diff(t), q7.diff(t), q8.diff(t), q11.diff(t), q12.diff(t),
+                  q13.diff(t), q14.diff(t), q15.diff(t), q16.diff(t)]
+    kindiffdict = sm.solve(kinematical, kindiffeqs, dict=True)[0]
     nonholonomic = nonholonomic.xreplace(kindiffdict)
-    u1_def = -rr*(u5 + u6)*sm.cos(q3)
-    u1p_def = u1_def.diff(t).xreplace(kindiffdict)
-    u2_def = -rr*(u5 + u6)*sm.sin(q3)
-    u2p_def = u2_def.diff(t).xreplace(kindiffdict)
+    print('The nonholonomic constraints are a function of these dynamic variables:')
+    print(list(sm.ordered(mec.find_dynamicsymbols(sm.Matrix(nonholonomic)))))
 
     ###############################
     # Prep symbolic data for output
     ###############################
 
-    q_ind = (q3, q4, q7)  # yaw, roll, steer
+    # N = 14
+    # M = 7
+    # n = N - M = 14 - 7
+    # m = 4
+    # p = n - m = 7 - 4 = 3
+
+    q_ind = (q1, q2, q3, q4, q6, q7, q8)  # yaw, roll, steer
     q_dep = (q5, q11, q12, q13, q14, q15, q16)  # pitch
-    # NOTE : I think q3 is an ignorable coordinate too.
-    # rear contact 1 dist, rear contact 2 dist, rear wheel angle, front wheel angle
-    q_ign = (q1, q2, q6, q8)
+    q_ign = None
     u_ind = (u4, u6, u7)  # roll rate, rear wheel rate, steer rate
-    u_dep = (u3, u5, u8, u11, u12, u13, u14, u15, u16)  # yaw rate, pitch rate, front wheel rate
+    u_dep = (u1, u2, u3, u5, u8, u11, u12, u13, u14, u15, u16)  # yaw rate, pitch rate, front wheel rate
     p = sm.Matrix([d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, g, ic11, ic22,
                    ic31, ic33, id11, id22, ie11, ie22, ie31, ie33, if11, if22,
                    l1, l2, l3, l4, mc, md, me, mf, mg, mh, mi, mj, rf, rr])
@@ -670,22 +637,46 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         ])
         p = p.col_join(p_muscles)
 
-        e = musculotendons[0].r
-        a = musculotendons[0].x
-        ad = musculotendons[0].rhs()
-        for m in musculotendons[1:]:
-            e = e.col_join(m.r)
-            a = a.col_join(m.x)
-            ad = ad.col_join(m.rhs())
+        e = sm.Matrix.vstack(*[m.r for m in musculotendons])
+        a = sm.Matrix.vstack(*[m.x for m in musculotendons])
+        ad = sm.Matrix.vstack(*[m.rhs() for m in musculotendons])
 
     T = sm.Matrix([T4, T6]) if include_roll_torque else sm.Matrix([T6])
-
     if steer_with is SteerWith.MUSCLES:
         r = sm.Matrix.vstack(T, e)
     elif steer_with is SteerWith.ELBOW_TORQUE:
         r = sm.Matrix.vstack(T, sm.Matrix([T13, T16]))
     elif steer_with is SteerWith.STEER_TORQUE:
         r = sm.Matrix.vstack(T, sm.Matrix([T7]))
+
+    q = sm.Matrix([q1, q2, q3, q4, q5, q6, q7, q8, q11, q12, q13, q14, q15, q16])
+    u = sm.Matrix([u1, u2, u3, u4, u5, u6, u7, u8, u11, u12, u13, u14, u15, u16])
+
+    points = (
+        O,
+        dn,  # rear contact
+        do,  # rear wheel center
+        cgr,  # right shoulder
+        go,
+        gm,
+        gh,  # right elbow
+        hm,
+        ho,
+        hc,  # right hand
+        ch_r,
+        ch_l,
+        jc,  # left hand
+        jo,
+        jm,
+        ji,
+        im,
+        io,
+        cgl,
+        do,  # rear wheel center
+        ce,  # steer axis
+        fo,  # front wheel center
+        fn,
+    )
 
     ###############
     # Kane's Method
@@ -707,17 +698,10 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
     Fr, Frs = kane.kanes_equations(bodies, loads=forces)
 
-    dyn_x = kane.q.col_join(kane.u)
-    dyn_eom = kane.mass_matrix_full*dyn_x - kane.forcing_full
-
-    contact_x = sm.Matrix([q1, q2, u1, u2])
-    contact_eom = sm.Matrix([
-        q1.diff(t) - u1, q2.diff(t) - u2,
-        u1.diff(t) - u1p_def, u2.diff(t) - u2p_def
-    ])
-
-    x = dyn_x.col_join(contact_x)
-    eom = dyn_eom.col_join(contact_eom)
+    x = q.col_join(u)
+    essential_eom = Fr + Frs
+    essential_constraints = holonomic.col_join(nonholonomic[[0, 1, 2, 4], 0])
+    eom = sm.Matrix(kinematical).col_join(essential_eom).col_join(essential_constraints)
 
     if steer_with is SteerWith.MUSCLES:
         x = x.col_join(a)
