@@ -37,7 +37,7 @@ def obj(free):
     q1 = free[:NUM_NODES]
     q2 = free[NUM_NODES:2*NUM_NODES]
     err = (target_q2(q1) - q2)
-    return INTERVAL_VALUE*(WEIGHT*np.sum(err**2) + (1.0-WEIGHT)*np.sum(T7)**2)
+    return INTERVAL_VALUE*(WEIGHT*np.sum(err**2) + (1.0-WEIGHT)*np.sum(r.flatten())**2)
 
 
 def obj_grad(free):
@@ -51,7 +51,7 @@ def obj_grad(free):
     grad[0:1*NUM_NODES] = dJdq1
     grad[1*NUM_NODES:2*NUM_NODES] = dJdq2
     # 28 states, 3 inputs, want last two inputs
-    grad[29*NUM_NODES:30*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*T7
+    grad[28*NUM_NODES:30*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*r.flatten()
     return grad
 
 
