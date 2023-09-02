@@ -20,12 +20,23 @@ logging.basicConfig(level=logging.INFO)
 DURATION = 2.0
 LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 1.0
-NUM_NODES = 400
+NUM_NODES = 100
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 WEIGHT = 0.9
 
-STEER_WITH = SteerWith.STEER_TORQUE
+#STEER_WITH = SteerWith.STEER_TORQUE
+STEER_WITH = SteerWith.ELBOW_TORQUE
 INCLUDE_ROLL_TORQUE = False
+
+if STEER_WITH.name == "STEER_TORQUE":
+    NUM_INPUTS = 2  # T6, T7
+    NUM_STATES = 28
+elif STEER_WITH.name == "ELBOW_TORQUE":
+    NUM_INPUTS = 3  # T6, T13, T16
+    NUM_STATES = 28
+elif STEER_WITH.name == "MUSCLES":
+    NUM_INPUTS = 5
+    NUM_STATES = 32
 
 
 def target_q2(q1):
@@ -34,27 +45,21 @@ def target_q2(q1):
 
 def obj(free):
     """Minimize the sum of the squares of the muscle activations."""
-    # TODO : Generalize input minimizer to any set of inputs from SteerWith
-    _, r, _ = parse_free(free, 28, 2, NUM_NODES)
-    T6, T7 = r
-    q1 = free[:NUM_NODES]
-    q2 = free[NUM_NODES:2*NUM_NODES]
+    x, r, _ = parse_free(free, NUM_STATES, NUM_INPUTS, NUM_NODES)
+    q1, q2 = x[0], x[1]
     err = (target_q2(q1) - q2)
     return INTERVAL_VALUE*(WEIGHT*np.sum(err**2) + (1.0-WEIGHT)*np.sum(r.flatten())**2)
 
 
 def obj_grad(free):
-    _, r, _ = parse_free(free, 28, 2, NUM_NODES)
-    T6, T7 = r
-    q1 = free[:NUM_NODES]
-    q2 = free[NUM_NODES:2*NUM_NODES]
+    x, r, _ = parse_free(free, NUM_STATES, NUM_INPUTS, NUM_NODES)
+    q1, q2 = x[0], x[1]
     grad = np.zeros_like(free)
     dJdq1 = np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
     dJdq2 = LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2
     grad[0:1*NUM_NODES] = dJdq1
     grad[1*NUM_NODES:2*NUM_NODES] = dJdq2
-    # 28 states, 3 inputs, want last two inputs
-    grad[28*NUM_NODES:30*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*r.flatten()
+    grad[NUM_STATES*NUM_NODES:(NUM_STATES + NUM_INPUTS)*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*r.flatten()
     return grad
 
 
