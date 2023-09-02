@@ -1,6 +1,7 @@
 """A trajectory tracking OCP with a muscle-driven steered bicycle."""
 
 from timeit import default_timer as timer
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,11 +14,13 @@ from container import Metadata, SteerWith
 from generate_eom import SteerWith, constants_values, gen_eom_for_opty
 from generate_init_guess import gen_init_guess_for_opty
 
+logging.basicConfig(level=logging.INFO)
+
 
 DURATION = 2.0
 LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 1.0
-NUM_NODES = 100
+NUM_NODES = 400
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 WEIGHT = 0.9
 
@@ -191,7 +194,7 @@ problem = Problem(
     known_parameter_map=dict(zip(model.p, constants)),
     instance_constraints=instance_constraints,
     bounds=bounds,
-    integration_method='midpoint',
+    #integration_method='midpoint',
     parallel=True,
 )
 
