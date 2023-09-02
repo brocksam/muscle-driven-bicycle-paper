@@ -8,6 +8,7 @@ dependencies:
   - matplotlib
   - mpmath  # sympy dependency
   - numpy  # opty dependency
+  - openmp  # opty dependency
   - python
   - scikits.odes
   - scipy

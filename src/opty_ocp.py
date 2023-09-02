@@ -7,6 +7,7 @@ import numpy as np
 import sympy as sm
 import sympy.physics.mechanics as me
 from opty.direct_collocation import Problem
+from opty.utils import parse_free
 
 from container import Metadata, SteerWith
 from generate_eom import SteerWith, constants_values, gen_eom_for_opty
@@ -18,6 +19,7 @@ LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 1.0
 NUM_NODES = 100
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
+WEIGHT = 0.9
 
 STEER_WITH = SteerWith.STEER_TORQUE
 INCLUDE_ROLL_TORQUE = False
@@ -29,20 +31,27 @@ def target_q2(q1):
 
 def obj(free):
     """Minimize the sum of the squares of the muscle activations."""
+    # TODO : Generalize input minimizer to any set of inputs from SteerWith
+    _, r, _ = parse_free(free, 28, 2, NUM_NODES)
+    T6, T7 = r
     q1 = free[:NUM_NODES]
     q2 = free[NUM_NODES:2*NUM_NODES]
     err = (target_q2(q1) - q2)
-    return INTERVAL_VALUE*(np.sum(err**2))
+    return INTERVAL_VALUE*(WEIGHT*np.sum(err**2) + (1.0-WEIGHT)*np.sum(T7)**2)
 
 
 def obj_grad(free):
+    _, r, _ = parse_free(free, 28, 2, NUM_NODES)
+    T6, T7 = r
     q1 = free[:NUM_NODES]
     q2 = free[NUM_NODES:2*NUM_NODES]
     grad = np.zeros_like(free)
     dJdq1 = np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
     dJdq2 = LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2
-    grad[:NUM_NODES] = dJdq1
-    grad[NUM_NODES:2*NUM_NODES] = dJdq2
+    grad[0:1*NUM_NODES] = dJdq1
+    grad[1*NUM_NODES:2*NUM_NODES] = dJdq2
+    # 28 states, 3 inputs, want last two inputs
+    grad[29*NUM_NODES:30*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*T7
     return grad
 
 
@@ -183,6 +192,7 @@ problem = Problem(
     instance_constraints=instance_constraints,
     bounds=bounds,
     integration_method='midpoint',
+    parallel=True,
 )
 
 problem.add_option('nlp_scaling_method', 'gradient-based')
