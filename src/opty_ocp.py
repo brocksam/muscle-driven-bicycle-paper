@@ -22,10 +22,11 @@ LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 1.0
 NUM_NODES = 100
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
-WEIGHT = 0.9
+WEIGHT = 0.2
 
 #STEER_WITH = SteerWith.STEER_TORQUE
-STEER_WITH = SteerWith.ELBOW_TORQUE
+#STEER_WITH = SteerWith.ELBOW_TORQUE
+STEER_WITH = SteerWith.MUSCLES
 INCLUDE_ROLL_TORQUE = False
 
 if STEER_WITH.name == "STEER_TORQUE":
@@ -48,6 +49,8 @@ def obj(free):
     x, r, _ = parse_free(free, NUM_STATES, NUM_INPUTS, NUM_NODES)
     q1, q2 = x[0], x[1]
     err = (target_q2(q1) - q2)
+    # TODO : drive torque shouldn't be summed with muscle excitation, as they
+    # are different units (also could solve with setting T6 = 0).
     return INTERVAL_VALUE*(WEIGHT*np.sum(err**2) + (1.0-WEIGHT)*np.sum(r.flatten())**2)
 
 
@@ -163,15 +166,15 @@ if INCLUDE_ROLL_TORQUE:
 if STEER_WITH is SteerWith.STEER_TORQUE:
     bounds = {
         **bounds,
-        T6: (-100.0, 100.0),
-        T7: (-100.0, 100.0),
+        T6: (-10.0, 10.0),
+        T7: (-10.0, 10.0),
     }
 elif STEER_WITH is SteerWith.ELBOW_TORQUE:
     bounds = {
         **bounds,
         T6: (-10.0, 10.0),
-        T13: (-100.0, 100.0),
-        T16: (-100.0, 100.0),
+        T13: (-10.0, 10.0),
+        T16: (-10.0, 10.0),
     }
 elif STEER_WITH is SteerWith.MUSCLES:
     bounds = {
