@@ -20,13 +20,13 @@ logging.basicConfig(level=logging.INFO)
 DURATION = 2.0
 LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 1.0
-NUM_NODES = 100
+NUM_NODES = 400
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
-WEIGHT = 0.2
+WEIGHT = 0.5
 
 #STEER_WITH = SteerWith.STEER_TORQUE
-#STEER_WITH = SteerWith.ELBOW_TORQUE
-STEER_WITH = SteerWith.MUSCLES
+STEER_WITH = SteerWith.ELBOW_TORQUE
+#STEER_WITH = SteerWith.MUSCLES
 INCLUDE_ROLL_TORQUE = False
 
 if STEER_WITH.name == "STEER_TORQUE":
@@ -58,6 +58,8 @@ def obj_grad(free):
     x, r, _ = parse_free(free, NUM_STATES, NUM_INPUTS, NUM_NODES)
     q1, q2 = x[0], x[1]
     grad = np.zeros_like(free)
+    # TODO : Add WEIGHT to q1, q2. Also, why isn't INTERVAL_VALUE in the q1, q2
+    # derivs?
     dJdq1 = np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
     dJdq2 = LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2
     grad[0:1*NUM_NODES] = dJdq1
