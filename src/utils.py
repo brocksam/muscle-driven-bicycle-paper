@@ -1,5 +1,33 @@
+import os
+import functools
+import logging
+
+import cloudpickle
 import sympy as sm
 import sympy.physics.mechanics as me
+
+
+def cache_result(filename):
+    def decorator(function):
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            clear = kwargs.pop('clear_cache', False)
+            if os.path.exists(filename) and not clear:
+                logging.info('Loading from {}'.format(filename))
+                with open(filename, "r") as f:
+                    res = cloudpickle.load(f)
+            else:
+                try:
+                    os.remove(filename)
+                except OSError:
+                    pass
+                res = function(*args, **kwargs)
+                logging.info('Caching to {}'.format(filename))
+                with open(filename, "wb") as f:
+                    cloudpickle.dump(res, f)
+            return res
+        return wrapper
+    return decorator
 
 
 class ReferenceFrame(me.ReferenceFrame):
@@ -102,7 +130,7 @@ class ExtensorPathway(me.PathwayBase):
         """
         return self.radius*self.coordinate.diff(me.dynamicsymbols._t)
 
-    def compute_loads(self, force_magnitude):
+    def to_loads(self, force_magnitude):
         """Loads in the correct format to be supplied to `KanesMethod`.
 
         Forces applied to origin, insertion, and P from the muscle wrapped

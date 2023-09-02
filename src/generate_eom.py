@@ -7,7 +7,7 @@ from sympy.physics._biomechanics import (
 )
 
 from container import ForOpty, SteerWith
-from utils import ReferenceFrame, ExtensorPathway
+from utils import ReferenceFrame, ExtensorPathway, cache_result
 
 
 def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
@@ -696,7 +696,11 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         constraint_solver='CRAMER',
     )
 
-    Fr, Frs = kane.kanes_equations(bodies, loads=forces)
+    @cache_result('eom.pkl')
+    def kanes_eq():
+        return kane.kanes_equations(bodies, loads=forces)
+
+    Fr, Frs = kanes_eq()
 
     x = q.col_join(u)
     essential_eom = Fr + Frs
