@@ -11,8 +11,9 @@ from opty.direct_collocation import Problem
 from opty.utils import parse_free
 
 from container import Metadata, SteerWith
-from generate_eom import SteerWith, constants_values, gen_eom_for_opty
+from generate_eom import constants_values, gen_eom_for_opty
 from generate_init_guess import gen_init_guess_for_opty
+from utils import plot_trajectories
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 DURATION = 2.0
 LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 1.0
-NUM_NODES = 400
+NUM_NODES = 200
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 WEIGHT = 0.5
 
@@ -60,8 +61,8 @@ def obj_grad(free):
     grad = np.zeros_like(free)
     # TODO : Add WEIGHT to q1, q2. Also, why isn't INTERVAL_VALUE in the q1, q2
     # derivs?
-    dJdq1 = np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
-    dJdq2 = LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2
+    dJdq1 = WEIGHT*INTERVAL_VALUE*np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
+    dJdq2 = WEIGHT*INTERVAL_VALUE*(LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2)
     grad[0:1*NUM_NODES] = dJdq1
     grad[1*NUM_NODES:2*NUM_NODES] = dJdq2
     grad[NUM_STATES*NUM_NODES:(NUM_STATES + NUM_INPUTS)*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*r.flatten()
@@ -148,17 +149,17 @@ bounds = {
     u1: (0.0, 10.0),
     u2: (-5.0, 5.0),
     u3: (-2.0, 2.0),
-    u4: (-2.0, 2.0),
-    u5: (-2.0, 2.0),
+    u4: (-4.0, 4.0),
+    u5: (-4.0, 4.0),
     u6: (-20.0, 0.0),
-    u7: (-2.0, 2.0),
+    u7: (-4.0, 4.0),
     u8: (-20.0, 0.0),
-    u11: (-2.0, 2.0),
-    u12: (-2.0, 2.0),
-    u13: (-2.0, 2.0),
-    u14: (-2.0, 2.0),
-    u15: (-2.0, 2.0),
-    u16: (-2.0, 2.0),
+    u11: (-4.0, 4.0),
+    u14: (-4.0, 4.0),
+    u13: (-4.0, 4.0),
+    u14: (-4.0, 4.0),
+    u15: (-4.0, 4.0),
+    u16: (-4.0, 4.0),
 }
 if INCLUDE_ROLL_TORQUE:
     bounds = {
@@ -231,4 +232,9 @@ q2_target = target_q2(q1_target)
 
 plt.plot(q1_sol, q2_sol, label='Solution')
 plt.plot(q1_target, q2_target, label='Target')
+
+solx, solr, solp = parse_free(sol, NUM_STATES, NUM_INPUTS, NUM_NODES)
+solt = np.linspace(0.0, DURATION, num=NUM_NODES)
+plot_trajectories(solt, solx, solr, model.x, model.r)
+
 plt.show()
