@@ -1,7 +1,7 @@
 import numpy as np
 import sympy as sm
 import sympy.physics.mechanics as mec
-from sympy.physics._biomechanics import (
+from sympy.physics.biomechanics import (
     FirstOrderActivationDeGroote2016,
     MusculotendonDeGroote2016,
 )
