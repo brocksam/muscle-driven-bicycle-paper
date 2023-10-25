@@ -18,16 +18,17 @@ from utils import plot_trajectories
 logging.basicConfig(level=logging.INFO)
 
 
-DURATION = 2.0
+SPEED = 5.0
 LONGITUDINAL_DISPLACEMENT = 10.0
-LATERAL_DISPLACEMENT = 1.0
+LATERAL_DISPLACEMENT = 2.0
+DURATION = 2.0
 NUM_NODES = 200
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
-WEIGHT = 0.5
+WEIGHT = 0.95
 
 #STEER_WITH = SteerWith.STEER_TORQUE
-#STEER_WITH = SteerWith.ELBOW_TORQUE
-STEER_WITH = SteerWith.MUSCLES
+STEER_WITH = SteerWith.ELBOW_TORQUE
+#STEER_WITH = SteerWith.MUSCLES
 INCLUDE_ROLL_TORQUE = False
 
 if STEER_WITH.name == "STEER_TORQUE":
@@ -113,16 +114,16 @@ instance_constraints = (
     q15.replace(model.t, 0.0) - q15.replace(model.t, DURATION),
     q16.replace(model.t, 0.0) - q16.replace(model.t, DURATION),
     #u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
-    #u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
-    #u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
+    u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
+    u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
     u3.replace(model.t, 0.0) - u3.replace(model.t, DURATION),
     u4.replace(model.t, 0.0) - u4.replace(model.t, DURATION),
     u5.replace(model.t, 0.0) - u5.replace(model.t, DURATION),
-    #u6.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
-    #u6.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
+    u6.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
+    u6.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
     u7.replace(model.t, 0.0) - u7.replace(model.t, DURATION),
-    #u8.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
-    #u8.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
+    u8.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
+    u8.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
     u11.replace(model.t, 0.0) - u11.replace(model.t, DURATION),
     u12.replace(model.t, 0.0) - u12.replace(model.t, DURATION),
     u13.replace(model.t, 0.0) - u13.replace(model.t, DURATION),
