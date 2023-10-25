@@ -137,10 +137,14 @@ class ExtensorPathway(me.PathwayBase):
         return loads
 
 
-def plot_trajectories(t, x, r, state_syms, input_syms):
+def plot_trajectories(t, x, r, state_syms, input_syms, skip_first=False):
 
-    q = x[0:14]
-    u = x[14:28]
+    q = x[0:14].copy()
+    u = x[14:28].copy()
+    if skip_first:
+        q[:, 0] = np.nan
+        u[:, 0] = np.nan
+        r[:, 0] = np.nan
     q_sym = state_syms[0:14]
     u_sym = state_syms[14:28]
 

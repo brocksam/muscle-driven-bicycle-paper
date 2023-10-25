@@ -26,9 +26,9 @@ NUM_NODES = 200
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 WEIGHT = 0.95
 
-#STEER_WITH = SteerWith.STEER_TORQUE
+STEER_WITH = SteerWith.STEER_TORQUE
 #STEER_WITH = SteerWith.ELBOW_TORQUE
-STEER_WITH = SteerWith.MUSCLES
+#STEER_WITH = SteerWith.MUSCLES
 INCLUDE_ROLL_TORQUE = False
 
 if STEER_WITH.name == "STEER_TORQUE":
@@ -240,6 +240,6 @@ plt.plot(q1_target, q2_target, label='Target')
 
 solx, solr, solp = parse_free(sol, NUM_STATES, NUM_INPUTS, NUM_NODES)
 solt = np.linspace(0.0, DURATION, num=NUM_NODES)
-plot_trajectories(solt, solx, solr, model.x, model.r)
+plot_trajectories(solt, solx, solr, model.x, model.r, skip_first=True)
 
 plt.show()
