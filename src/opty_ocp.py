@@ -18,17 +18,17 @@ from utils import plot_trajectories
 logging.basicConfig(level=logging.INFO)
 
 
-SPEED = 5.0
+SPEED = 5.0  # m/s
 LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 2.0
-DURATION = 2.0
+DURATION = LONGITUDINAL_DISPLACEMENT / SPEED
 NUM_NODES = 200
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 WEIGHT = 0.95
 
 #STEER_WITH = SteerWith.STEER_TORQUE
-STEER_WITH = SteerWith.ELBOW_TORQUE
-#STEER_WITH = SteerWith.MUSCLES
+#STEER_WITH = SteerWith.ELBOW_TORQUE
+STEER_WITH = SteerWith.MUSCLES
 INCLUDE_ROLL_TORQUE = False
 
 if STEER_WITH.name == "STEER_TORQUE":
@@ -38,7 +38,7 @@ elif STEER_WITH.name == "ELBOW_TORQUE":
     NUM_INPUTS = 3  # T6, T13, T16
     NUM_STATES = 28
 elif STEER_WITH.name == "MUSCLES":
-    NUM_INPUTS = 5
+    NUM_INPUTS = 5  # T6, e1, e2, e3, e4
     NUM_STATES = 32
 
 
@@ -113,7 +113,7 @@ instance_constraints = (
     q14.replace(model.t, 0.0) - q14.replace(model.t, DURATION),
     q15.replace(model.t, 0.0) - q15.replace(model.t, DURATION),
     q16.replace(model.t, 0.0) - q16.replace(model.t, DURATION),
-    #u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
+    u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
     u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
     u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
     u3.replace(model.t, 0.0) - u3.replace(model.t, DURATION),
@@ -156,7 +156,7 @@ bounds = {
     u7: (-4.0, 4.0),
     u8: (-20.0, 0.0),
     u11: (-4.0, 4.0),
-    u14: (-4.0, 4.0),
+    u12: (-4.0, 4.0),
     u13: (-4.0, 4.0),
     u14: (-4.0, 4.0),
     u15: (-4.0, 4.0),
@@ -183,6 +183,10 @@ elif STEER_WITH is SteerWith.ELBOW_TORQUE:
 elif STEER_WITH is SteerWith.MUSCLES:
     bounds = {
         **bounds,
+        a1: (0.0, 1.0),
+        a2: (0.0, 1.0),
+        a3: (0.0, 1.0),
+        a4: (0.0, 1.0),
         T6: (-10.0, 10.0),
         e1: (0.0, 1.0),
         e2: (0.0, 1.0),
