@@ -1,26 +1,45 @@
 """A trajectory tracking OCP with a muscle-driven steered bicycle."""
 
 from timeit import default_timer as timer
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sm
 import sympy.physics.mechanics as me
 from opty.direct_collocation import Problem
+from opty.utils import parse_free
 
 from container import Metadata, SteerWith
-from generate_eom import SteerWith, constants_values, gen_eom_for_opty
+from generate_eom import constants_values, gen_eom_for_opty
 from generate_init_guess import gen_init_guess_for_opty
+from utils import plot_trajectories
+
+logging.basicConfig(level=logging.INFO)
 
 
-DURATION = 2.0
+SPEED = 1.0  # m/s
 LONGITUDINAL_DISPLACEMENT = 10.0
-LATERAL_DISPLACEMENT = 1.0
-NUM_NODES = 100
+LATERAL_DISPLACEMENT = 2.0
+DURATION = LONGITUDINAL_DISPLACEMENT / SPEED
+NUM_NODES = 200
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
+WEIGHT = 0.95
 
-STEER_WITH = SteerWith.STEER_TORQUE
+#STEER_WITH = SteerWith.STEER_TORQUE
+#STEER_WITH = SteerWith.ELBOW_TORQUE
+STEER_WITH = SteerWith.MUSCLES
 INCLUDE_ROLL_TORQUE = False
+
+if STEER_WITH.name == "STEER_TORQUE":
+    NUM_INPUTS = 2  # T6, T7
+    NUM_STATES = 28
+elif STEER_WITH.name == "ELBOW_TORQUE":
+    NUM_INPUTS = 3  # T6, T13, T16
+    NUM_STATES = 28
+elif STEER_WITH.name == "MUSCLES":
+    NUM_INPUTS = 5  # T6, e1, e2, e3, e4
+    NUM_STATES = 32
 
 
 def target_q2(q1):
@@ -29,20 +48,25 @@ def target_q2(q1):
 
 def obj(free):
     """Minimize the sum of the squares of the muscle activations."""
-    q1 = free[:NUM_NODES]
-    q2 = free[NUM_NODES:2*NUM_NODES]
+    x, r, _ = parse_free(free, NUM_STATES, NUM_INPUTS, NUM_NODES)
+    q1, q2 = x[0], x[1]
     err = (target_q2(q1) - q2)
-    return INTERVAL_VALUE*(np.sum(err**2))
+    # TODO : drive torque shouldn't be summed with muscle excitation, as they
+    # are different units (also could solve with setting T6 = 0).
+    return INTERVAL_VALUE*(WEIGHT*np.sum(err**2) + (1.0-WEIGHT)*np.sum(r.flatten())**2)
 
 
 def obj_grad(free):
-    q1 = free[:NUM_NODES]
-    q2 = free[NUM_NODES:2*NUM_NODES]
+    x, r, _ = parse_free(free, NUM_STATES, NUM_INPUTS, NUM_NODES)
+    q1, q2 = x[0], x[1]
     grad = np.zeros_like(free)
-    dJdq1 = np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
-    dJdq2 = LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2
-    grad[:NUM_NODES] = dJdq1
-    grad[NUM_NODES:2*NUM_NODES] = dJdq2
+    # TODO : Add WEIGHT to q1, q2. Also, why isn't INTERVAL_VALUE in the q1, q2
+    # derivs?
+    dJdq1 = WEIGHT*INTERVAL_VALUE*np.pi*LATERAL_DISPLACEMENT*(LATERAL_DISPLACEMENT*(1 - np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT))/2 - q2)*np.sin(np.pi*q1/LONGITUDINAL_DISPLACEMENT)/LONGITUDINAL_DISPLACEMENT
+    dJdq2 = WEIGHT*INTERVAL_VALUE*(LATERAL_DISPLACEMENT*(np.cos(np.pi*q1/LONGITUDINAL_DISPLACEMENT) - 1) + 2*q2)
+    grad[0:1*NUM_NODES] = dJdq1
+    grad[1*NUM_NODES:2*NUM_NODES] = dJdq2
+    grad[NUM_STATES*NUM_NODES:(NUM_STATES + NUM_INPUTS)*NUM_NODES] = 2.0*(1.0-WEIGHT)*INTERVAL_VALUE*r.flatten()
     return grad
 
 
@@ -89,17 +113,17 @@ instance_constraints = (
     q14.replace(model.t, 0.0) - q14.replace(model.t, DURATION),
     q15.replace(model.t, 0.0) - q15.replace(model.t, DURATION),
     q16.replace(model.t, 0.0) - q16.replace(model.t, DURATION),
-    u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
-    u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
-    u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
+    #u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
+    #u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
+    #u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
     u3.replace(model.t, 0.0) - u3.replace(model.t, DURATION),
     u4.replace(model.t, 0.0) - u4.replace(model.t, DURATION),
     u5.replace(model.t, 0.0) - u5.replace(model.t, DURATION),
-    u6.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
-    u6.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
+    #u6.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
+    #u6.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
     u7.replace(model.t, 0.0) - u7.replace(model.t, DURATION),
-    u8.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
-    u8.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
+    #u8.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
+    #u8.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
     u11.replace(model.t, 0.0) - u11.replace(model.t, DURATION),
     u12.replace(model.t, 0.0) - u12.replace(model.t, DURATION),
     u13.replace(model.t, 0.0) - u13.replace(model.t, DURATION),
@@ -126,17 +150,17 @@ bounds = {
     u1: (0.0, 10.0),
     u2: (-5.0, 5.0),
     u3: (-2.0, 2.0),
-    u4: (-2.0, 2.0),
-    u5: (-2.0, 2.0),
+    u4: (-4.0, 4.0),
+    u5: (-4.0, 4.0),
     u6: (-20.0, 0.0),
-    u7: (-2.0, 2.0),
+    u7: (-4.0, 4.0),
     u8: (-20.0, 0.0),
-    u11: (-2.0, 2.0),
-    u12: (-2.0, 2.0),
-    u13: (-2.0, 2.0),
-    u14: (-2.0, 2.0),
-    u15: (-2.0, 2.0),
-    u16: (-2.0, 2.0),
+    u11: (-4.0, 4.0),
+    u12: (-4.0, 4.0),
+    u13: (-4.0, 4.0),
+    u14: (-4.0, 4.0),
+    u15: (-4.0, 4.0),
+    u16: (-4.0, 4.0),
 }
 if INCLUDE_ROLL_TORQUE:
     bounds = {
@@ -146,19 +170,23 @@ if INCLUDE_ROLL_TORQUE:
 if STEER_WITH is SteerWith.STEER_TORQUE:
     bounds = {
         **bounds,
-        T6: (-100.0, 100.0),
-        T7: (-100.0, 100.0),
+        T6: (-10.0, 10.0),
+        T7: (-10.0, 10.0),
     }
 elif STEER_WITH is SteerWith.ELBOW_TORQUE:
     bounds = {
         **bounds,
         T6: (-10.0, 10.0),
-        T13: (-100.0, 100.0),
-        T16: (-100.0, 100.0),
+        T13: (-10.0, 10.0),
+        T16: (-10.0, 10.0),
     }
 elif STEER_WITH is SteerWith.MUSCLES:
     bounds = {
         **bounds,
+        a1: (0.0, 1.0),
+        a2: (0.0, 1.0),
+        a3: (0.0, 1.0),
+        a4: (0.0, 1.0),
         T6: (-10.0, 10.0),
         e1: (0.0, 1.0),
         e2: (0.0, 1.0),
@@ -182,7 +210,8 @@ problem = Problem(
     known_parameter_map=dict(zip(model.p, constants)),
     instance_constraints=instance_constraints,
     bounds=bounds,
-    integration_method='midpoint',
+    #integration_method='midpoint',
+    parallel=True,
 )
 
 problem.add_option('nlp_scaling_method', 'gradient-based')
@@ -206,6 +235,15 @@ q2_sol = sol[NUM_NODES:2*NUM_NODES]
 q1_target = np.linspace(0.0, LONGITUDINAL_DISPLACEMENT)
 q2_target = target_q2(q1_target)
 
-plt.plot(q1_sol, q2_sol, label='Solution')
-plt.plot(q1_target, q2_target, label='Target')
+fig, ax = plt.subplots()
+ax.plot(q1_target, q2_target, label='Target', linewidth=4)
+ax.plot(q1_sol, q2_sol, label='Solution', linewidth=2, linestyle='dashed')
+ax.set_xlabel('Distance [m]')
+ax.set_ylabel('Distance [m]')
+ax.legend()
+
+solx, solr, solp = parse_free(sol, NUM_STATES, NUM_INPUTS, NUM_NODES)
+solt = np.linspace(0.0, DURATION, num=NUM_NODES)
+plot_trajectories(solt, solx, solr, model.x, model.r, skip_first=True)
+
 plt.show()

@@ -485,7 +485,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             deactivation_time_constant=tau_d,
             smoothing_rate=b_tanh,
         )
-        bicep_right = MusculotendonDeGroote2016(
+        bicep_right = MusculotendonDeGroote2016.with_defaults(
             'bi_r',
             bicep_right_pathway,
             activation_dynamics=bicep_right_activation,
@@ -504,7 +504,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             deactivation_time_constant=tau_d,
             smoothing_rate=b_tanh,
         )
-        bicep_left = MusculotendonDeGroote2016(
+        bicep_left = MusculotendonDeGroote2016.with_defaults(
             'bi_l',
             bicep_left_pathway,
             activation_dynamics=bicep_left_activation,
@@ -524,7 +524,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             deactivation_time_constant=tau_d,
             smoothing_rate=b_tanh,
         )
-        tricep_right = MusculotendonDeGroote2016(
+        tricep_right = MusculotendonDeGroote2016.with_defaults(
             'tri_r',
             tricep_right_pathway,
             activation_dynamics=tricep_right_activation,
@@ -544,7 +544,7 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
             deactivation_time_constant=tau_d,
             smoothing_rate=b_tanh,
         )
-        tricep_left = MusculotendonDeGroote2016(
+        tricep_left = MusculotendonDeGroote2016.with_defaults(
             'tri_l',
             tricep_left_pathway,
             activation_dynamics=tricep_left_activation,

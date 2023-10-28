@@ -158,6 +158,26 @@ def _u16_guess(model, problem, metadata):
     return np.gradient(_q16_guess(model, problem, metadata))
 
 
+def _a_bi_r_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _a_bi_l_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _a_tri_r_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _a_tri_l_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
 def _T4_guess(model, problem, metadata):
     """."""
     return 0.01*np.ones(metadata.num_nodes)
@@ -179,6 +199,26 @@ def _T13_guess(model, problem, metadata):
 
 
 def _T16_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _e_bi_r_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _e_bi_l_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _e_tri_r_guess(model, problem, metadata):
+    """."""
+    return 0.01*np.ones(metadata.num_nodes)
+
+
+def _e_tri_l_guess(model, problem, metadata):
     """."""
     return 0.01*np.ones(metadata.num_nodes)
 
@@ -212,9 +252,17 @@ DISPATCHER = {
     mec.dynamicsymbols('u14'): _u14_guess,
     mec.dynamicsymbols('u15'): _u15_guess,
     mec.dynamicsymbols('u16'): _u16_guess,
+    mec.dynamicsymbols('a_bi_r'): _a_bi_r_guess,
+    mec.dynamicsymbols('a_bi_l'): _a_bi_l_guess,
+    mec.dynamicsymbols('a_tri_r'): _a_tri_r_guess,
+    mec.dynamicsymbols('a_tri_l'): _a_tri_l_guess,
     mec.dynamicsymbols('T4'): _T4_guess,
     mec.dynamicsymbols('T6'): _T6_guess,
     mec.dynamicsymbols('T7'): _T7_guess,
     mec.dynamicsymbols('T13'): _T13_guess,
     mec.dynamicsymbols('T16'): _T16_guess,
+    mec.dynamicsymbols('e_bi_r'): _e_bi_r_guess,
+    mec.dynamicsymbols('e_bi_l'): _e_bi_l_guess,
+    mec.dynamicsymbols('e_tri_r'): _e_tri_r_guess,
+    mec.dynamicsymbols('e_tri_l'): _e_tri_l_guess,
 }
