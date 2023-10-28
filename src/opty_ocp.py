@@ -235,8 +235,12 @@ q2_sol = sol[NUM_NODES:2*NUM_NODES]
 q1_target = np.linspace(0.0, LONGITUDINAL_DISPLACEMENT)
 q2_target = target_q2(q1_target)
 
-plt.plot(q1_sol, q2_sol, label='Solution')
-plt.plot(q1_target, q2_target, label='Target')
+fig, ax = plt.subplots()
+ax.plot(q1_target, q2_target, label='Target', linewidth=4)
+ax.plot(q1_sol, q2_sol, label='Solution', linewidth=2, linestyle='dashed')
+ax.set_xlabel('Distance [m]')
+ax.set_ylabel('Distance [m]')
+ax.legend()
 
 solx, solr, solp = parse_free(sol, NUM_STATES, NUM_INPUTS, NUM_NODES)
 solt = np.linspace(0.0, DURATION, num=NUM_NODES)
