@@ -7,10 +7,11 @@ from sympy.physics.biomechanics import (
 )
 
 from container import ForOpty, SteerWith
-from utils import ReferenceFrame, ExtensorPathway
+from utils import ReferenceFrame, ExtensorPathway, cache_result
 
 
-def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
+def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False,
+                     clear_cache=False):
     """Returns a dictionary with necessary symbolic expressions and variables
     for use in Opty.
 
@@ -27,6 +28,9 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
     include_roll_torque : bool
         Boolean to select whether the roll torque ``T4`` should be included in
         the formulation. The default is ``False``.
+    clear_cache : boolean
+        KanesMethod object is cached to and loaded from disk if False, else
+        cache is cleared.
 
     See Also
     ========
@@ -684,19 +688,24 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
 
     print("Generating Kane's equations.")
 
-    kane = mec.KanesMethod(
-        N,
-        q_ind,
-        u_ind,
-        kd_eqs=kinematical,
-        q_dependent=q_dep,
-        configuration_constraints=holonomic,
-        u_dependent=u_dep,
-        velocity_constraints=nonholonomic,
-        constraint_solver='CRAMER',
-    )
+    @cache_result('eom.pkl')
+    def kanes_eq(clear_cache=clear_cache):
+        kane = mec.KanesMethod(
+            N,
+            q_ind,
+            u_ind,
+            kd_eqs=kinematical,
+            q_dependent=q_dep,
+            configuration_constraints=holonomic,
+            u_dependent=u_dep,
+            velocity_constraints=nonholonomic,
+            constraint_solver='CRAMER',
+        )
+        _ = kane.kanes_equations(bodies, loads=forces)
+        return kane
 
-    Fr, Frs = kane.kanes_equations(bodies, loads=forces)
+    kane = kanes_eq()
+    Fr, Frs = kane._fr, kane._frstar
 
     x = q.col_join(u)
     essential_eom = Fr + Frs
