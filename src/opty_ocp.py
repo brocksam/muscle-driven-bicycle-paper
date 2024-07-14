@@ -215,6 +215,7 @@ problem = Problem(
 )
 
 problem.add_option('nlp_scaling_method', 'gradient-based')
+#problem.add_option('linear_solver', 'spral')
 
 stop = timer()
 print(f'`opty.Problem` instantiated in {stop-start}s.')
@@ -244,6 +245,7 @@ ax.legend()
 
 solx, solr, solp = parse_free(sol, NUM_STATES, NUM_INPUTS, NUM_NODES)
 solt = np.linspace(0.0, DURATION, num=NUM_NODES)
-plot_trajectories(solt, solx, solr, model.x, model.r, skip_first=True)
+plot_trajectories(solt, solx, solr, model.x,
+                  problem.collocator.input_trajectories, skip_first=True)
 
 plt.show()
