@@ -1,7 +1,57 @@
+import os
+import functools
+import logging
+
+import cloudpickle
 import sympy as sm
 import sympy.physics.mechanics as me
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+def cache_result(filename):
+    """Decorator that caches returned objects to disk.
+
+    Parameters
+    ==========
+    filename : string
+        Filename or path to file, typically has extension .pkl.
+
+    Examples
+    ========
+
+    @cache_result('thing.pkl')
+    def big_calc(a, b, clear_cache=False):
+        return a, b
+
+    big_calc(1, 2)
+    big_calc(1, 2)
+    big_calc(1, 2, True)
+    big_calc(1, 2)
+
+    """
+    def decorator(function):
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            clear = kwargs.pop('clear_cache', False)
+            if os.path.exists(filename) and not clear:
+                print('Loading from {}'.format(filename))
+                logging.info('Loading from {}'.format(filename))
+                with open(filename, "rb") as f:
+                    res = cloudpickle.load(f)
+            else:
+                try:
+                    os.remove(filename)
+                except OSError:
+                    pass
+                res = function(*args, **kwargs)
+                print('Caching to {}'.format(filename))
+                logging.info('Caching to {}'.format(filename))
+                with open(filename, "wb") as f:
+                    cloudpickle.dump(res, f)
+            return res
+        return wrapper
+    return decorator
 
 
 class ReferenceFrame(me.ReferenceFrame):
