@@ -707,6 +707,8 @@ def gen_eom_for_opty(steer_with=SteerWith.MUSCLES, include_roll_torque=False):
         x = x.col_join(a)
         eom = eom.col_join(ad)
 
+    print('Number of EoM operations: ', sm.count_ops(eom))
+
     return ForOpty(t, x, r, eom, p)
 
 
