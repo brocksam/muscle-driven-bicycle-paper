@@ -2,13 +2,11 @@ name: muscle-bike-paper
 channels:
   - conda-forge
 dependencies:
-  - cyipopt  # opty dependency
-  - cython  # opty dependency
   - ipython
   - matplotlib
-  - mpmath  # sympy dependency
-  - numpy  # opty dependency
-  - openmp  # opty dependency
+  - openmp  # opty optional dependency
+  - opty
   - python
   - scikits.odes
   - scipy
+  - sympy
