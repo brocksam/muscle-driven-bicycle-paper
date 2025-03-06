@@ -4,9 +4,10 @@ channels:
 dependencies:
   - ipython
   - matplotlib
+  - numpy
   - openmp  # opty optional dependency
-  - opty
+  - opty >=1.2
   - python
   - scikits.odes
   - scipy
-  - sympy
+  - sympy >=1.13  # first to include biomechanics
