@@ -18,11 +18,11 @@ from utils import plot_trajectories
 logging.basicConfig(level=logging.INFO)
 
 
-SPEED = 1.0  # m/s
+SPEED = 3.0  # m/s
 LONGITUDINAL_DISPLACEMENT = 10.0
 LATERAL_DISPLACEMENT = 2.0
 DURATION = LONGITUDINAL_DISPLACEMENT / SPEED
-NUM_NODES = 200
+NUM_NODES = 301
 INTERVAL_VALUE = DURATION / (NUM_NODES - 1)
 WEIGHT = 0.95
 
@@ -113,15 +113,19 @@ instance_constraints = (
     q14.replace(model.t, 0.0) - q14.replace(model.t, DURATION),
     q15.replace(model.t, 0.0) - q15.replace(model.t, DURATION),
     q16.replace(model.t, 0.0) - q16.replace(model.t, DURATION),
+    u1.func(0.0),
+    u2.func(0.0),
     #u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
     #u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
     #u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
     u3.replace(model.t, 0.0) - u3.replace(model.t, DURATION),
     u4.replace(model.t, 0.0) - u4.replace(model.t, DURATION),
     u5.replace(model.t, 0.0) - u5.replace(model.t, DURATION),
+    u6.func(0.0),
     #u6.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
     #u6.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
     u7.replace(model.t, 0.0) - u7.replace(model.t, DURATION),
+    u8.func(0.0),
     #u8.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
     #u8.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
     u11.replace(model.t, 0.0) - u11.replace(model.t, DURATION),
@@ -149,7 +153,7 @@ bounds = {
     q16: (0.0, 3.0),
     u1: (0.0, 10.0),
     u2: (-5.0, 5.0),
-    u3: (-2.0, 2.0),
+    u3: (-4.0, 4.0),
     u4: (-4.0, 4.0),
     u5: (-4.0, 4.0),
     u6: (-20.0, 0.0),
@@ -170,13 +174,13 @@ if INCLUDE_ROLL_TORQUE:
 if STEER_WITH is SteerWith.STEER_TORQUE:
     bounds = {
         **bounds,
-        T6: (-10.0, 10.0),
+        T6: (-100.0, 100.0),
         T7: (-10.0, 10.0),
     }
 elif STEER_WITH is SteerWith.ELBOW_TORQUE:
     bounds = {
         **bounds,
-        T6: (-10.0, 10.0),
+        T6: (-100.0, 100.0),
         T13: (-10.0, 10.0),
         T16: (-10.0, 10.0),
     }
@@ -187,7 +191,7 @@ elif STEER_WITH is SteerWith.MUSCLES:
         a2: (0.0, 1.0),
         a3: (0.0, 1.0),
         a4: (0.0, 1.0),
-        T6: (-10.0, 10.0),
+        T6: (-100.0, 100.0),
         e1: (0.0, 1.0),
         e2: (0.0, 1.0),
         e3: (0.0, 1.0),
@@ -212,9 +216,11 @@ problem = Problem(
     bounds=bounds,
     #integration_method='midpoint',
     parallel=True,
+    tmp_dir='codegen',
 )
 
 problem.add_option('nlp_scaling_method', 'gradient-based')
+problem.add_option('max_iter', 5000)
 #problem.add_option('linear_solver', 'spral')
 
 stop = timer()
