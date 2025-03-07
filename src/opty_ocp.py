@@ -101,39 +101,52 @@ instance_constraints = (
     q1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT,
     q2.replace(model.t, 0.0),
     q2.replace(model.t, DURATION) - LATERAL_DISPLACEMENT,
-    q3.replace(model.t, 0.0) - q3.replace(model.t, DURATION),  # periodic yaw
-    q4.replace(model.t, 0.0) - q4.replace(model.t, DURATION),  # periodic roll
-    q5.replace(model.t, 0.0) - q5.replace(model.t, DURATION),  # periodic pitch
+    q3.func(0.0),
+    #q3.replace(model.t, 0.0) - q3.replace(model.t, DURATION),  # periodic yaw
+    #q4.replace(model.t, 0.0) - q4.replace(model.t, DURATION),  # periodic roll
+    q4.func(DURATION),  # upright at end
+    #q5.replace(model.t, 0.0) - q5.replace(model.t, DURATION),  # periodic pitch
     q6.replace(model.t, 0.0),
-    q7.replace(model.t, 0.0) - q7.replace(model.t, DURATION),  # periodic steering rotation angle
+    #q7.replace(model.t, 0.0) - q7.replace(model.t, DURATION),  # periodic steering rotation angle
+    q7.func(0.0),
     q8.replace(model.t, 0.0),
-    q11.replace(model.t, 0.0) - q11.replace(model.t, DURATION),
-    q12.replace(model.t, 0.0) - q12.replace(model.t, DURATION),
-    q13.replace(model.t, 0.0) - q13.replace(model.t, DURATION),
-    q14.replace(model.t, 0.0) - q14.replace(model.t, DURATION),
-    q15.replace(model.t, 0.0) - q15.replace(model.t, DURATION),
-    q16.replace(model.t, 0.0) - q16.replace(model.t, DURATION),
+    #q11.replace(model.t, 0.0) - q11.replace(model.t, DURATION),
+    #q12.replace(model.t, 0.0) - q12.replace(model.t, DURATION),
+    #q13.replace(model.t, 0.0) - q13.replace(model.t, DURATION),
+    #q14.replace(model.t, 0.0) - q14.replace(model.t, DURATION),
+    #q15.replace(model.t, 0.0) - q15.replace(model.t, DURATION),
+    #q16.replace(model.t, 0.0) - q16.replace(model.t, DURATION),
     u1.func(0.0),
     u2.func(0.0),
     #u1.replace(model.t, 0.0) - LONGITUDINAL_DISPLACEMENT/DURATION,
     #u1.replace(model.t, DURATION) - LONGITUDINAL_DISPLACEMENT/DURATION,
     #u2.replace(model.t, 0.0) - u2.replace(model.t, DURATION),
-    u3.replace(model.t, 0.0) - u3.replace(model.t, DURATION),
-    u4.replace(model.t, 0.0) - u4.replace(model.t, DURATION),
-    u5.replace(model.t, 0.0) - u5.replace(model.t, DURATION),
+    #u3.replace(model.t, 0.0) - u3.replace(model.t, DURATION),
+    u3.func(0.0),
+    u4.func(0.0),
+    u5.func(0.0),
+    #u4.replace(model.t, 0.0) - u4.replace(model.t, DURATION),
+    #u5.replace(model.t, 0.0) - u5.replace(model.t, DURATION),
     u6.func(0.0),
     #u6.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
     #u6.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-1]),
-    u7.replace(model.t, 0.0) - u7.replace(model.t, DURATION),
+    #u7.replace(model.t, 0.0) - u7.replace(model.t, DURATION),
+    u7.func(0.0),
     u8.func(0.0),
     #u8.replace(model.t, 0.0) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
     #u8.replace(model.t, DURATION) + LONGITUDINAL_DISPLACEMENT/(DURATION*constants[-2]),
-    u11.replace(model.t, 0.0) - u11.replace(model.t, DURATION),
-    u12.replace(model.t, 0.0) - u12.replace(model.t, DURATION),
-    u13.replace(model.t, 0.0) - u13.replace(model.t, DURATION),
-    u14.replace(model.t, 0.0) - u14.replace(model.t, DURATION),
-    u15.replace(model.t, 0.0) - u15.replace(model.t, DURATION),
-    u16.replace(model.t, 0.0) - u16.replace(model.t, DURATION),
+    #u11.replace(model.t, 0.0) - u11.replace(model.t, DURATION),
+    #u12.replace(model.t, 0.0) - u12.replace(model.t, DURATION),
+    #u13.replace(model.t, 0.0) - u13.replace(model.t, DURATION),
+    #u14.replace(model.t, 0.0) - u14.replace(model.t, DURATION),
+    #u15.replace(model.t, 0.0) - u15.replace(model.t, DURATION),
+    #u16.replace(model.t, 0.0) - u16.replace(model.t, DURATION),
+    u11.func(0.0),
+    u12.func(0.0),
+    u13.func(0.0),
+    u14.func(0.0),
+    u15.func(0.0),
+    u16.func(0.0),
 )
 
 bounds = {
@@ -247,6 +260,7 @@ ax.plot(q1_target, q2_target, label='Target', linewidth=4)
 ax.plot(q1_sol, q2_sol, label='Solution', linewidth=2, linestyle='dashed')
 ax.set_xlabel('Distance [m]')
 ax.set_ylabel('Distance [m]')
+ax.set_aspect('equal')
 ax.legend()
 
 solx, solr, solp = parse_free(sol, NUM_STATES, NUM_INPUTS, NUM_NODES)
